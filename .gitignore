@@ -1,0 +1,6 @@
+#Raw EEG dataset and metadata files 
+dataset/
+
+#Python execution artifacts
+__pycache__/
+*.py[cod]
