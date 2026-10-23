@@ -1,6 +1,9 @@
 #Raw EEG dataset and metadata files 
 dataset/
+data/preprocessed/
 
 #Python execution artifacts
 __pycache__/
 *.py[cod]
+.venv/
+*.egg-info/
