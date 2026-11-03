@@ -77,6 +77,50 @@ class EEGDataAccessTests(unittest.TestCase):
         self.assertEqual(metadata[2].subject_id, "ADD_01")
         self.assertEqual(metadata[2].clinical_group, "ADD")
 
+    def test_first_and_last_trial_of_every_file(self):
+        expected = (
+            (0, "d1.mat", 0, 0),
+            (1, "d1.mat", 1, 1),
+            (2, "d2.mat", 0, 2),
+            (3, "d2.mat", 1, 3),
+            (4, "d3.mat", 0, 4),
+            (5, "d3.mat", 1, 5),
+        )
+        with EEGTrialStore(self.manifest) as store:
+            results = [store.get_trial(index) for index in (0, 1, 2, 3, 4, 5)]
+
+        for (index, source_file, within_file_index, value), (trial, metadata) in zip(
+            expected, results
+        ):
+            self.assertEqual(metadata.global_trial_index, index)
+            self.assertEqual(metadata.source_file, source_file)
+            self.assertEqual(metadata.within_file_trial_index, within_file_index)
+            np.testing.assert_array_equal(
+                trial, np.full((385, 56), value, dtype=np.float32)
+            )
+
+    def test_every_file_transition_maps_to_the_next_file(self):
+        transitions = ((1, 2), (3, 4))
+        with EEGTrialStore(self.manifest) as store:
+            results = [
+                (store.get_trial(left), store.get_trial(right))
+                for left, right in transitions
+            ]
+
+        for (left_index, right_index), ((left_trial, left_row), (right_trial, right_row)) in zip(
+            transitions, results
+        ):
+            self.assertEqual(left_row.global_trial_index, left_index)
+            self.assertEqual(right_row.global_trial_index, right_index)
+            self.assertEqual(left_row.source_file, "d%d.mat" % (left_index // 2 + 1))
+            self.assertEqual(right_row.source_file, "d%d.mat" % (right_index // 2 + 1))
+            np.testing.assert_array_equal(
+                left_trial, np.full((385, 56), left_index, dtype=np.float32)
+            )
+            np.testing.assert_array_equal(
+                right_trial, np.full((385, 56), right_index, dtype=np.float32)
+            )
+
     def test_subject_and_group_lookup(self):
         subject_rows = tuple(self.manifest.iter_subject("ADD_02"))
         group_rows = tuple(self.manifest.iter_group("HC"))
@@ -98,6 +142,24 @@ class EEGDataAccessTests(unittest.TestCase):
 
         self.assertEqual(observed_sizes, [2, 2, 1])
         self.assertEqual(observed_indices, [5, 0, 3, 1, 4])
+
+    def test_batches_across_each_transition_preserve_values(self):
+        with EEGTrialStore(self.manifest) as store:
+            batches = [store.get_batch(indices) for indices in ((1, 2), (3, 4))]
+
+        for indices, (batch, rows) in zip(((1, 2), (3, 4)), batches):
+            self.assertEqual(batch.shape, (2, 385, 56))
+            self.assertEqual(batch.dtype, np.dtype(np.float32))
+            self.assertEqual(
+                [row.global_trial_index for row in rows], list(indices)
+            )
+            expected = np.stack(
+                [
+                    np.full((385, 56), index, dtype=np.float32)
+                    for index in indices
+                ]
+            )
+            np.testing.assert_array_equal(batch, expected)
 
     def test_manifest_csv_contains_metadata_only(self):
         manifest_path = self.dataset_dir / "manifest.csv"
@@ -128,10 +190,69 @@ class EEGDataAccessTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             self.manifest.metadata_for(6)
         with EEGTrialStore(self.manifest) as store:
+            for index in (-1, self.manifest.total_trials):
+                with self.subTest(index=index):
+                    with self.assertRaises(IndexError):
+                        store.get_trial(index)
+            for indices in ((-1,), (self.manifest.total_trials,)):
+                with self.subTest(indices=indices):
+                    with self.assertRaises(IndexError):
+                        store.get_batch(indices)
+                    with self.assertRaises(IndexError):
+                        tuple(store.iter_batches(1, indices=indices))
             with self.assertRaises(ValueError):
                 store.get_batch(())
             with self.assertRaises(ValueError):
-                next(store.iter_batches(0))
+                store.get_batch([])
+            self.assertEqual(list(store.iter_batches(2, indices=())), [])
+            for batch_size in (0, -1, True, 1.5):
+                with self.subTest(batch_size=batch_size):
+                    with self.assertRaises(ValueError):
+                        next(store.iter_batches(batch_size))
+
+    def test_incorrect_eeg_dimensions_are_rejected(self):
+        source_file = self.dataset_dir / "d2.mat"
+        with h5py.File(source_file, "w") as eeg_file:
+            eeg_file.create_dataset(
+                "d2", data=np.zeros((384, 56, 2), dtype=np.float32)
+            )
+
+        with EEGTrialStore(self.manifest) as store:
+            with self.assertRaisesRegex(ValueError, "Unexpected shape"):
+                store.get_trial(2)
+
+    def test_incorrect_source_dtype_is_rejected(self):
+        source_file = self.dataset_dir / "d2.mat"
+        with h5py.File(source_file, "w") as eeg_file:
+            eeg_file.create_dataset(
+                "d2", data=np.zeros((385, 56, 2), dtype=np.float64)
+            )
+
+        with EEGTrialStore(self.manifest) as store:
+            with self.assertRaisesRegex(ValueError, "Unexpected dtype"):
+                store.get_trial(2)
+
+    def test_non_integral_file_trial_counts_are_rejected(self):
+        with self.assertRaisesRegex(TypeError, "file trial count must be an integer"):
+            TrialManifest(
+                self.dataset_dir,
+                file_trial_counts=(2.5, 2, 2),
+                group_ranges=self.group_ranges,
+            )
+
+    def test_non_integral_group_range_boundaries_are_rejected(self):
+        invalid_ranges = (
+            (("HC", 0.5, 3), ("ADD", 3, 6)),
+            (("HC", 0, 3.5), ("ADD", 3.5, 6)),
+        )
+        for group_ranges in invalid_ranges:
+            with self.subTest(group_ranges=group_ranges):
+                with self.assertRaisesRegex(TypeError, "group range"):
+                    TrialManifest(
+                        self.dataset_dir,
+                        file_trial_counts=self.file_trial_counts,
+                        group_ranges=group_ranges,
+                    )
 
 
 if __name__ == "__main__":

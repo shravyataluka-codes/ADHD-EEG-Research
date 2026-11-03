@@ -22,6 +22,12 @@ TRIAL_SHAPE = (385, 56)
 TRIAL_DTYPE = np.dtype(np.float32)
 
 
+def _require_integer(value: int, name: str) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
+        raise TypeError(f"{name} must be an integer")
+    return int(value)
+
+
 def _default_dataset_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "dataset"
 
@@ -54,7 +60,9 @@ class TrialManifest:
         group_ranges: Sequence[tuple[str, int, int]] = DEFAULT_GROUP_RANGES,
     ) -> None:
         self.dataset_dir = Path(dataset_dir) if dataset_dir is not None else _default_dataset_dir()
-        self.file_trial_counts = tuple(int(count) for count in file_trial_counts)
+        self.file_trial_counts = tuple(
+            _require_integer(count, "file trial count") for count in file_trial_counts
+        )
         if not self.file_trial_counts or any(count <= 0 for count in self.file_trial_counts):
             raise ValueError("file_trial_counts must contain positive trial counts")
 
@@ -63,7 +71,14 @@ class TrialManifest:
             self._file_offsets.append(self._file_offsets[-1] + count)
         self.total_trials = self._file_offsets[-1]
 
-        self.group_ranges = tuple((str(group), int(start), int(end)) for group, start, end in group_ranges)
+        self.group_ranges = tuple(
+            (
+                str(group),
+                _require_integer(start, "group range start"),
+                _require_integer(end, "group range end"),
+            )
+            for group, start, end in group_ranges
+        )
         self._validate_group_ranges()
 
         metadata_path = self.dataset_dir / "y_stim.mat"
