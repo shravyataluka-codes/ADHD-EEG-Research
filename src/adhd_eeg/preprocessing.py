@@ -1,7 +1,15 @@
 """Reproducible, bounded-memory EEG preprocessing.
 
 This module does not infer ICA artifacts. Processing requires explicit filter
-settings and reviewed per-subject component decisions supplied by the caller.
+settings and reviewed component decisions keyed by candidate participant
+mappings supplied by the caller. Those mappings do not establish participant
+identity.
+
+The project literature review supports a conservative preprocessing stance:
+prior cohort papers report ICA and artifact-rejection context, but the exact
+implemented settings are not authoritative without a frozen, documented protocol.
+The module therefore enforces explicit configuration rather than silently
+applying ad hoc defaults.
 """
 
 from __future__ import annotations
@@ -148,8 +156,8 @@ class PreprocessingConfig:
 
 
 @dataclass(frozen=True)
-class SubjectICAReview:
-    """Externally reviewed component exclusions for a single subject."""
+class CandidateParticipantICAReview:
+    """Externally reviewed component exclusions for a candidate mapping group."""
 
     exclude_components: tuple[int, ...]
     reviewer: str
@@ -217,24 +225,39 @@ def config_from_mapping(data: Mapping[str, Any]) -> PreprocessingConfig:
     return config
 
 
-def reviews_from_mapping(data: Mapping[str, Any]) -> dict[str, SubjectICAReview]:
-    """Parse explicit, reviewed ICA component decisions keyed by subject ID."""
+def reviews_from_mapping(
+    data: Mapping[str, Any],
+) -> dict[str, CandidateParticipantICAReview]:
+    """Parse reviewed ICA decisions keyed by candidate participant mapping."""
     protocol = data.get("review_protocol")
-    subjects = data.get("subjects")
+    candidate_participants = data.get("candidate_participants")
+    if "subjects" in data:
+        raise ValueError(
+            "ICA review key 'subjects' was removed; use 'candidate_participants'"
+        )
     if not isinstance(protocol, str) or not protocol.strip():
         raise ValueError("ICA review file must identify a non-empty review_protocol")
-    if not isinstance(subjects, Mapping):
-        raise ValueError("ICA review file must contain a subjects mapping")
+    if not isinstance(candidate_participants, Mapping):
+        raise ValueError(
+            "ICA review file must contain a candidate_participants mapping"
+        )
 
-    reviews: dict[str, SubjectICAReview] = {}
-    for subject_id, entry in subjects.items():
-        if not isinstance(subject_id, str) or not isinstance(entry, Mapping):
-            raise ValueError("Each ICA review entry must be a subject-keyed object")
+    reviews: dict[str, CandidateParticipantICAReview] = {}
+    for candidate_participant_id, entry in candidate_participants.items():
+        if not isinstance(candidate_participant_id, str) or not isinstance(entry, Mapping):
+            raise ValueError(
+                "Each ICA review entry must be keyed by a candidate participant mapping"
+            )
         if entry.get("reviewed") is not True:
-            raise ValueError(f"ICA decision for {subject_id} is not marked reviewed")
+            raise ValueError(
+                f"ICA decision for {candidate_participant_id} is not marked reviewed"
+            )
         exclusions = entry.get("exclude_components")
         if not isinstance(exclusions, list):
-            raise ValueError(f"ICA decision for {subject_id} needs exclude_components list")
+            raise ValueError(
+                f"ICA decision for {candidate_participant_id} needs "
+                "exclude_components list"
+            )
         reviewer = entry.get("reviewer")
         reviewed_at = entry.get("reviewed_at")
         rationale = entry.get("rationale")
@@ -243,25 +266,26 @@ def reviews_from_mapping(data: Mapping[str, Any]) -> dict[str, SubjectICAReview]
             for value in (reviewer, reviewed_at, rationale)
         ):
             raise ValueError(
-                f"ICA decision for {subject_id} requires reviewer, reviewed_at, and rationale"
+                f"ICA decision for {candidate_participant_id} requires reviewer, "
+                "reviewed_at, and rationale"
             )
-        review = SubjectICAReview(
+        review = CandidateParticipantICAReview(
             exclude_components=tuple(exclusions),
             reviewer=reviewer,
             reviewed_at=reviewed_at,
             rationale=f"{protocol}: {rationale}",
         )
         review.validate()
-        reviews[subject_id] = review
+        reviews[candidate_participant_id] = review
     return reviews
 
 
 def preprocess_trials(
     trials: np.ndarray,
     config: PreprocessingConfig,
-    review: SubjectICAReview,
+    review: CandidateParticipantICAReview,
 ) -> tuple[np.ndarray, int]:
-    """Filter and ICA-clean one subject's epochs, preserving ``(trials,time,channels)``."""
+    """Filter and ICA-clean a candidate participant group, preserving its shape."""
     data = np.asarray(trials)
     if data.ndim != 3 or data.shape[0] == 0:
         raise ValueError("trials must have shape (non-empty trials, time, channels)")
@@ -368,23 +392,28 @@ def _statistics(trial: np.ndarray) -> dict[str, float]:
     }
 
 
-def _subject_trials(
+def _candidate_participant_trials(
     manifest: TrialManifest,
 ) -> dict[str, list[TrialMetadata]]:
-    rows_by_subject: dict[str, list[TrialMetadata]] = {}
+    rows_by_candidate_participant: dict[str, list[TrialMetadata]] = {}
     for row in manifest.iter_metadata():
-        rows_by_subject.setdefault(row.subject_id, []).append(row)
-    return rows_by_subject
+        rows_by_candidate_participant.setdefault(
+            row.candidate_participant_id, []
+        ).append(row)
+    return rows_by_candidate_participant
 
 
 def _verify_reviews(
-    reviews: Mapping[str, SubjectICAReview],
-    subject_ids: set[str],
+    reviews: Mapping[str, CandidateParticipantICAReview],
+    candidate_participant_ids: set[str],
 ) -> None:
-    if set(reviews) != subject_ids:
-        missing = sorted(subject_ids - set(reviews))
-        extra = sorted(set(reviews) - subject_ids)
-        raise ValueError(f"ICA review subject mismatch; missing={missing}, extra={extra}")
+    if set(reviews) != candidate_participant_ids:
+        missing = sorted(candidate_participant_ids - set(reviews))
+        extra = sorted(set(reviews) - candidate_participant_ids)
+        raise ValueError(
+            "ICA review candidate participant mapping mismatch; "
+            f"missing={missing}, extra={extra}"
+        )
     for review in reviews.values():
         review.validate()
 
@@ -393,15 +422,16 @@ def process_dataset(
     dataset_dir: str | Path,
     output_dir: str | Path,
     config: PreprocessingConfig,
-    reviews: Mapping[str, SubjectICAReview],
+    reviews: Mapping[str, CandidateParticipantICAReview],
     *,
     manifest: TrialManifest | None = None,
 ) -> dict[str, Any]:
-    """Process subjects one at a time into separate derived HDF5 files.
+    """Process candidate participant mapping groups into derived HDF5 files.
 
     The output directory must not already exist. Source arrays are opened
     read-only, while output arrays retain each source's ``(time,channels,trials)``
-    shape and float32 dtype.
+    shape and float32 dtype. The candidate grouping does not establish verified
+    participant identity or clinical diagnosis.
     """
     source_dir = Path(dataset_dir)
     destination = Path(output_dir)
@@ -416,7 +446,7 @@ def process_dataset(
         raise FileExistsError(f"Refusing to overwrite derived output directory: {destination}")
     config.validate()
 
-    grouped_trials = _subject_trials(trial_manifest)
+    grouped_trials = _candidate_participant_trials(trial_manifest)
     _verify_reviews(reviews, set(grouped_trials))
     eeg_source_paths = [
         source_dir / f"d{file_number}.mat"
@@ -430,7 +460,7 @@ def process_dataset(
     destination.parent.mkdir(parents=True, exist_ok=True)
 
     first_trial: tuple[np.ndarray, np.ndarray, TrialMetadata] | None = None
-    subject_results: dict[str, dict[str, Any]] = {}
+    candidate_participant_results: dict[str, dict[str, Any]] = {}
     with tempfile.TemporaryDirectory(
         prefix=f".{destination.name}.tmp-",
         dir=destination.parent,
@@ -467,12 +497,15 @@ def process_dataset(
                     )
 
             with EEGTrialStore(trial_manifest) as store:
-                for subject_id, rows in grouped_trials.items():
+                for candidate_participant_id, rows in grouped_trials.items():
                     indices = [row.global_trial_index for row in rows]
                     raw_batch, returned_rows = store.get_batch(indices)
                     if returned_rows != tuple(rows):
-                        raise RuntimeError(f"Trial metadata order changed for {subject_id}")
-                    review = reviews[subject_id]
+                        raise RuntimeError(
+                            "Trial metadata order changed for candidate participant "
+                            f"mapping {candidate_participant_id}"
+                        )
+                    review = reviews[candidate_participant_id]
                     cleaned_batch, component_count = preprocess_trials(
                         raw_batch,
                         config,
@@ -482,7 +515,7 @@ def process_dataset(
                         output_datasets[row.source_file][:, :, row.within_file_trial_index] = (
                             cleaned_batch[batch_index]
                         )
-                    subject_results[subject_id] = {
+                    candidate_participant_results[candidate_participant_id] = {
                         "trial_count": len(rows),
                         "ica_component_count": component_count,
                         "removed_component_indices": list(review.exclude_components),
@@ -536,7 +569,11 @@ def process_dataset(
                 for index, path in enumerate(eeg_source_paths)
             ],
             "trial_count": trial_manifest.total_trials,
-            "subject_count": len(grouped_trials),
+            "candidate_participant_count": len(grouped_trials),
+            "candidate_participant_grouping": {
+                "key": "candidate_participant_id",
+                "status": "candidate mapping; identity not independently verified",
+            },
             "sampling_frequency_hz": config.sampling_frequency_hz,
             "sampling_frequency_evidence": "He et al. paper-reported; not stored in MAT headers",
             "bandpass": {
@@ -554,7 +591,10 @@ def process_dataset(
             "ica": {
                 **asdict(config.ica),
                 "random_seed": config.random_seed,
-                "fit_scope": "per subject, across that subject's epochs",
+                "fit_scope": (
+                    "per candidate participant mapping group, across that "
+                    "group's epochs"
+                ),
                 "fit_options": {
                     "decim": 1,
                     "reject": None,
@@ -563,9 +603,10 @@ def process_dataset(
                     "fit_params": {},
                 },
                 "component_selection": (
-                    "externally reviewed per-subject indices; no automatic component removal"
+                    "externally reviewed indices keyed by candidate participant "
+                    "mapping; no automatic component removal"
                 ),
-                "subjects": subject_results,
+                "candidate_participants": candidate_participant_results,
             },
             "software_versions": {
                 "python": platform.python_version(),
@@ -587,8 +628,9 @@ def process_dataset(
                 "The local files' upstream ICA state is unknown.",
                 "Filtering is applied within already-epoched trials; continuous "
                 "pre-epoch recordings are unavailable for edge-aware filtering.",
-                "ICA is fitted independently per subject before any evaluation split; "
-                "this component does not enforce fold-local fitting.",
+                "ICA is fitted independently per candidate participant mapping "
+                "group before any evaluation split; this grouping does not "
+                "establish verified identity or enforce fold-local fitting.",
                 "The physical interpretation of the 385th sample remains unresolved.",
             ],
         }
@@ -604,7 +646,11 @@ def process_dataset(
             "preprocessed_statistics": _statistics(processed_trial),
             "shape_preserved": raw_trial.shape == processed_trial.shape,
             "trial_count": trial_manifest.total_trials,
-            "subject_count": len(grouped_trials),
+            "candidate_participant_count": len(grouped_trials),
+            "candidate_participant_grouping": {
+                "key": "candidate_participant_id",
+                "status": "candidate mapping; identity not independently verified",
+            },
             "raw_files_unchanged": unchanged,
             "signal_arrays_file": "inspection_trial.npz",
         }

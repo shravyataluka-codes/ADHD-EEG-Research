@@ -34,22 +34,29 @@ def _default_dataset_dir() -> Path:
 
 @dataclass(frozen=True)
 class TrialMetadata:
-    """Index and validated subject/group metadata for one trial."""
+    """Source locator and candidate mappings for one trial.
+
+    Candidate values encode the current deterministic interpretation of
+    ``y_stim`` and configured ranges. They are not verified identity or labels.
+    """
 
     global_trial_index: int
     source_file: str
     within_file_trial_index: int
-    subject_id: str
-    clinical_group: str
-    y_stim_column: int
+    candidate_participant_id: str
+    candidate_diagnostic_group: str
+    candidate_y_stim_column: int
 
 
 class TrialManifest:
-    """Create trial metadata from the established Sprint 1 crosswalk.
+    """Create trial metadata from the candidate Sprint 1 crosswalk.
 
     The manifest reads only row 0 of ``y_stim`` (a small metadata vector); it
     never reads EEG samples. Indices are zero-based, and the default file/group
-    ranges are those recorded in the Sprint 1 mapping report.
+    ranges are assumptions recorded in the Sprint 1 mapping report. Returned
+    participant, diagnostic-group, and metadata-column fields are explicitly
+    candidate values; only the source filename and within-file index identify
+    a source-local trial locator.
     """
 
     def __init__(
@@ -73,7 +80,7 @@ class TrialManifest:
 
         self.group_ranges = tuple(
             (
-                str(group),
+                str(group).strip(),
                 _require_integer(start, "group range start"),
                 _require_integer(end, "group range end"),
             )
@@ -103,9 +110,15 @@ class TrialManifest:
     def _validate_group_ranges(self) -> None:
         if not self.group_ranges:
             raise ValueError("group_ranges must not be empty")
+        group_names = [group for group, _, _ in self.group_ranges]
+        if any(not group for group in group_names):
+            raise ValueError("group_ranges must be named, contiguous, and non-empty")
+        if len(set(group_names)) != len(group_names):
+            raise ValueError("group_ranges must not contain duplicate group names")
+
         expected_start = 0
         for group, start, end in self.group_ranges:
-            if not group or start != expected_start or end <= start:
+            if start != expected_start or end <= start:
                 raise ValueError("group_ranges must be named, contiguous, and non-empty")
             expected_start = end
         if expected_start != self.total_trials:
@@ -136,9 +149,9 @@ class TrialManifest:
             global_trial_index=index,
             source_file=f"d{file_number + 1}.mat",
             within_file_trial_index=index - self._file_offsets[file_number],
-            subject_id=f"{group}_{subject_index:02d}",
-            clinical_group=group,
-            y_stim_column=index,
+            candidate_participant_id=f"{group}_{subject_index:02d}",
+            candidate_diagnostic_group=group,
+            candidate_y_stim_column=index,
         )
 
     def iter_metadata(self, indices: Iterable[int] | None = None) -> Iterator[TrialMetadata]:
@@ -147,17 +160,28 @@ class TrialManifest:
         for index in selected:
             yield self.metadata_for(index)
 
-    def iter_subject(self, subject_id: str) -> Iterator[TrialMetadata]:
-        """Yield all manifest rows for a composite Sprint 1 subject ID."""
-        return (row for row in self.iter_metadata() if row.subject_id == subject_id)
-
-    def iter_group(self, clinical_group: str) -> Iterator[TrialMetadata]:
-        """Yield all manifest rows for one clinical group."""
-        if clinical_group not in {group for group, _, _ in self.group_ranges}:
-            raise KeyError(f"Unknown clinical group: {clinical_group}")
+    def iter_candidate_participant(
+        self, candidate_participant_id: str
+    ) -> Iterator[TrialMetadata]:
+        """Yield rows sharing a candidate participant key, not a verified ID."""
         return (
             row for row in self.iter_metadata()
-            if row.clinical_group == clinical_group
+            if row.candidate_participant_id == candidate_participant_id
+        )
+
+    def iter_candidate_diagnostic_group(
+        self, candidate_diagnostic_group: str
+    ) -> Iterator[TrialMetadata]:
+        """Yield rows by candidate group interpretation, not verified diagnosis."""
+        if candidate_diagnostic_group not in {
+            group for group, _, _ in self.group_ranges
+        }:
+            raise KeyError(
+                f"Unknown candidate diagnostic group: {candidate_diagnostic_group}"
+            )
+        return (
+            row for row in self.iter_metadata()
+            if row.candidate_diagnostic_group == candidate_diagnostic_group
         )
 
     def write_csv(self, output_path: str | Path) -> None:

@@ -39,7 +39,8 @@ def main() -> None:
     )
     print(
         f"Processed {metadata['trial_count']} trials from "
-        f"{metadata['subject_count']} subjects into {arguments.output_dir}"
+        f"{metadata['candidate_participant_count']} candidate participant "
+        f"groups (not verified identities) into {arguments.output_dir}"
     )
 
 

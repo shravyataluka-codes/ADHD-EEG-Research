@@ -70,12 +70,16 @@ class EEGDataAccessTests(unittest.TestCase):
             [(row.source_file, row.within_file_trial_index) for row in metadata],
             [("d1.mat", 1), ("d2.mat", 0), ("d2.mat", 1), ("d3.mat", 0)],
         )
-        self.assertEqual([row.y_stim_column for row in metadata], [1, 2, 3, 4])
+        self.assertEqual(
+            [row.candidate_y_stim_column for row in metadata], [1, 2, 3, 4]
+        )
         np.testing.assert_array_equal([trial[0, 0] for trial in trials], [1, 2, 3, 4])
-        self.assertEqual(metadata[1].subject_id, "HC_02")
-        self.assertEqual(metadata[1].clinical_group, "HC")
-        self.assertEqual(metadata[2].subject_id, "ADD_01")
-        self.assertEqual(metadata[2].clinical_group, "ADD")
+        self.assertEqual(metadata[1].candidate_participant_id, "HC_02")
+        self.assertEqual(metadata[1].candidate_diagnostic_group, "HC")
+        self.assertEqual(metadata[2].candidate_participant_id, "ADD_01")
+        self.assertEqual(metadata[2].candidate_diagnostic_group, "ADD")
+        self.assertFalse(hasattr(metadata[1], "participant_id"))
+        self.assertFalse(hasattr(metadata[1], "diagnostic_group"))
 
     def test_first_and_last_trial_of_every_file(self):
         expected = (
@@ -121,14 +125,16 @@ class EEGDataAccessTests(unittest.TestCase):
                 right_trial, np.full((385, 56), right_index, dtype=np.float32)
             )
 
-    def test_subject_and_group_lookup(self):
-        subject_rows = tuple(self.manifest.iter_subject("ADD_02"))
-        group_rows = tuple(self.manifest.iter_group("HC"))
+    def test_candidate_participant_and_group_lookup(self):
+        subject_rows = tuple(
+            self.manifest.iter_candidate_participant("ADD_02")
+        )
+        group_rows = tuple(self.manifest.iter_candidate_diagnostic_group("HC"))
 
         self.assertEqual([row.global_trial_index for row in subject_rows], [4, 5])
         self.assertEqual([row.global_trial_index for row in group_rows], [0, 1, 2])
         with self.assertRaises(KeyError):
-            tuple(self.manifest.iter_group("unknown"))
+            tuple(self.manifest.iter_candidate_diagnostic_group("unknown"))
 
     def test_batches_are_bounded_and_preserve_request_order(self):
         observed_sizes = []
@@ -253,6 +259,22 @@ class EEGDataAccessTests(unittest.TestCase):
                         file_trial_counts=self.file_trial_counts,
                         group_ranges=group_ranges,
                     )
+
+    def test_duplicate_group_names_after_whitespace_normalization_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "duplicate group names"):
+            TrialManifest(
+                self.dataset_dir,
+                file_trial_counts=self.file_trial_counts,
+                group_ranges=((" HC ", 0, 3), ("HC", 3, 6)),
+            )
+
+    def test_whitespace_only_group_names_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "must be named"):
+            TrialManifest(
+                self.dataset_dir,
+                file_trial_counts=self.file_trial_counts,
+                group_ranges=((" \t ", 0, 3), ("ADD", 3, 6)),
+            )
 
 
 if __name__ == "__main__":

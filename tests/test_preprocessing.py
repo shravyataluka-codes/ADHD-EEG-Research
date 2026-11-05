@@ -1,10 +1,13 @@
 import csv
 import hashlib
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 import h5py
 import numpy as np
@@ -12,12 +15,13 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from adhd_eeg.preprocessing import (
+    CandidateParticipantICAReview,
     FilterSettings,
     ICASettings,
     PreprocessingConfig,
-    SubjectICAReview,
     preprocess_trials,
     process_dataset,
+    reviews_from_mapping,
 )
 from adhd_eeg.data_access import TrialManifest
 
@@ -47,7 +51,7 @@ class EEGPreprocessingTests(unittest.TestCase):
             ),
             ica=ICASettings(method="infomax", n_components=2, max_iter=500),
         )
-        self.review = SubjectICAReview(
+        self.review = CandidateParticipantICAReview(
             exclude_components=(),
             reviewer="synthetic-test",
             reviewed_at="2026-10-07T00:00:00Z",
@@ -140,7 +144,23 @@ class EEGPreprocessingTests(unittest.TestCase):
         )
 
         self.assertEqual(metadata["trial_count"], 7)
-        self.assertEqual(metadata["subject_count"], 2)
+        self.assertEqual(metadata["candidate_participant_count"], 2)
+        self.assertNotIn("subject_count", metadata)
+        self.assertEqual(
+            metadata["candidate_participant_grouping"],
+            {
+                "key": "candidate_participant_id",
+                "status": "candidate mapping; identity not independently verified",
+            },
+        )
+        self.assertEqual(
+            metadata["ica"]["fit_scope"],
+            "per candidate participant mapping group, across that group's epochs",
+        )
+        self.assertEqual(
+            set(metadata["ica"]["candidate_participants"]), {"HC_01", "HC_02"}
+        )
+        self.assertNotIn("subjects", metadata["ica"])
         self.assertTrue(metadata["validation"]["shape_preserved"])
         self.assertTrue(all(metadata["validation"]["raw_files_unchanged"].values()))
         self.assertIn("y_stim.mat", metadata["validation"]["raw_files_unchanged"])
@@ -163,14 +183,33 @@ class EEGPreprocessingTests(unittest.TestCase):
         self.assertEqual(len(manifest_rows), 7)
         self.assertEqual(manifest_rows[2]["global_trial_index"], "2")
         self.assertEqual(manifest_rows[2]["source_file"], "d3.mat")
-        self.assertEqual(manifest_rows[2]["subject_id"], "HC_01")
+        self.assertEqual(manifest_rows[2]["candidate_participant_id"], "HC_01")
+        serialized_metadata = json.loads(
+            (self.output_dir / "metadata.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            serialized_metadata["candidate_participant_grouping"],
+            metadata["candidate_participant_grouping"],
+        )
+        self.assertNotIn("subject_count", serialized_metadata)
+        self.assertNotIn("subjects", serialized_metadata["ica"])
+        self.assertIn("candidate_participants", serialized_metadata["ica"])
+        self.assertIn(
+            "candidate_participant_id",
+            serialized_metadata["candidate_participant_grouping"]["key"],
+        )
         inspection = json.loads(
             (self.output_dir / "inspection_report.json").read_text(encoding="utf-8")
         )
         self.assertEqual(inspection["raw_shape"], [385, 56])
         self.assertEqual(inspection["preprocessed_shape"], [385, 56])
         self.assertEqual(inspection["trial_count"], 7)
-        self.assertEqual(inspection["subject_count"], 2)
+        self.assertEqual(inspection["candidate_participant_count"], 2)
+        self.assertNotIn("subject_count", inspection)
+        self.assertEqual(
+            inspection["candidate_participant_grouping"],
+            metadata["candidate_participant_grouping"],
+        )
         with np.load(self.output_dir / "inspection_trial.npz") as representative:
             self.assertEqual(representative["raw"].shape, (385, 56))
             self.assertEqual(representative["preprocessed"].shape, (385, 56))
@@ -200,7 +239,9 @@ class EEGPreprocessingTests(unittest.TestCase):
                 self._reviews(),
                 manifest=manifest,
             )
-        with self.assertRaisesRegex(ValueError, "ICA review subject mismatch"):
+        with self.assertRaisesRegex(
+            ValueError, "ICA review candidate participant mapping mismatch"
+        ):
             process_dataset(
                 self.dataset_dir,
                 self.output_dir,
@@ -211,7 +252,7 @@ class EEGPreprocessingTests(unittest.TestCase):
         self.assertFalse(self.output_dir.exists())
 
     def test_invalid_component_index_and_notch_setting_are_rejected(self):
-        review = SubjectICAReview(
+        review = CandidateParticipantICAReview(
             exclude_components=(2,),
             reviewer="synthetic-test",
             reviewed_at="2026-10-07T00:00:00Z",
@@ -229,6 +270,60 @@ class EEGPreprocessingTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "approved notch"):
             invalid.validate(channel_count=2)
+
+    def test_ica_review_mapping_uses_candidate_participant_schema(self):
+        decision = {
+            "review_protocol": "synthetic-only",
+            "candidate_participants": {
+                "candidate-HC-01": {
+                    "reviewed": True,
+                    "exclude_components": [],
+                    "reviewer": "synthetic-test",
+                    "reviewed_at": "2026-10-07T00:00:00Z",
+                    "rationale": "Synthetic schema test.",
+                }
+            },
+        }
+        reviews = reviews_from_mapping(decision)
+
+        self.assertEqual(set(reviews), {"candidate-HC-01"})
+        self.assertIsInstance(reviews["candidate-HC-01"], CandidateParticipantICAReview)
+        self.assertNotIn("subjects", decision)
+        with self.assertRaisesRegex(ValueError, "use 'candidate_participants'"):
+            reviews_from_mapping(
+                {
+                    "review_protocol": "synthetic-only",
+                    "subjects": decision["candidate_participants"],
+                }
+            )
+
+    def test_preprocessing_cli_reports_candidate_groups_not_verified_subjects(self):
+        from adhd_eeg import preprocess_cli
+
+        with (
+            patch("sys.argv", [
+                "preprocess",
+                "--dataset-dir", str(self.dataset_dir),
+                "--output-dir", str(self.output_dir),
+                "--config", "config.json",
+                "--ica-decisions", "decisions.json",
+            ]),
+            patch.object(preprocess_cli, "_read_json", side_effect=[{}, {}]),
+            patch.object(preprocess_cli, "config_from_mapping", return_value=self.config),
+            patch.object(preprocess_cli, "reviews_from_mapping", return_value={}),
+            patch.object(
+                preprocess_cli,
+                "process_dataset",
+                return_value={"trial_count": 7, "candidate_participant_count": 2},
+            ),
+        ):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                preprocess_cli.main()
+
+        self.assertIn("2 candidate participant groups", output.getvalue())
+        self.assertIn("not verified identities", output.getvalue())
+        self.assertNotIn("subjects", output.getvalue())
 
 
 if __name__ == "__main__":
