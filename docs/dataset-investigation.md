@@ -1,6 +1,17 @@
-# ADHD-EEG Dataset Investigation Audit
+# Historical ADHD-EEG Dataset Investigation Audit
 
-This document serves as a research audit of the ADHD-EEG dataset. It records what was investigated, directly observed, inferred, and what remains unknown. It also documents the decisions made and the rationale behind them.
+> [!WARNING]
+> **Historical first-pass interpretation; superseded where it assigns metadata
+> semantics or cross-file identity.** Sprint 2 evidence supports structural
+> observations (array shapes, counts, row-0 runs, filename prefixes, and one-hot
+> patterns), not the EEG-to-`y_stim` join, row-0-to-filename correspondence,
+> participant identity, or diagnosis mapping. Row 0 and filename blocks are
+> candidate participant mappings; filename/group assignments are candidate
+> diagnostic-group mappings; rows 1–3 have unresolved semantics and are not
+> clinical targets. The body below preserves historical findings and must not be
+> treated as current evidence of verified identity, diagnosis, or split safety.
+
+This historical audit records what was investigated, directly observed, inferred, and what remains unknown in its original interpretation.
 
 ## 1. Dataset Source
 

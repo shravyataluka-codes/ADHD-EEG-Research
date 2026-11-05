@@ -2,8 +2,11 @@
 """
 scripts/validate_trial_subject_mapping.py
 
-Focused, read-only validation tooling for Sprint 1:
-Trial -> Subject -> Clinical Group Mapping Validation.
+Focused, read-only structural diagnostics for the candidate trial/metadata mapping.
+
+These checks do not verify EEG-to-metadata correspondence, participant identity,
+or clinical diagnosis. They also do not establish participant-independent
+evaluation or produce a real-data split.
 
 Strict constraints:
 - Never modifies raw .mat files
@@ -39,7 +42,7 @@ def parse_mat_header_timestamp(filepath):
 
 def validate_eeg_files():
     print("=" * 70)
-    print("PHASE 1: RAW EEG FILES VALIDATION (d1.mat - d7.mat)")
+    print("PHASE 1: RAW EEG FILE STRUCTURAL CHECKS (d1.mat - d7.mat)")
     print("=" * 70)
     
     total_trials = 0
@@ -90,12 +93,12 @@ def validate_eeg_files():
             })
             
     assert total_trials == 33902, f"Total trials mismatch: {total_trials} != 33902"
-    print(f"\n[PASS] All 7 EEG files validated. Total trials: {total_trials:,}")
+    print(f"\n[PASS] Structural checks passed for all 7 EEG files. Total trials: {total_trials:,}")
     return eeg_summary
 
 def validate_y_stim():
     print("\n" + "=" * 70)
-    print("PHASE 2: y_stim.mat VALIDATION")
+    print("PHASE 2: y_stim.mat STRUCTURAL DIAGNOSTICS")
     print("=" * 70)
     
     fpath = os.path.join(DATASET_DIR, "y_stim.mat")
@@ -115,7 +118,7 @@ def validate_y_stim():
     assert not np.isnan(y).any(), "NaN found in y_stim"
     assert not np.isinf(y).any(), "Inf found in y_stim"
     
-    # 1. Analyze Row 0: subject indices and contiguous runs
+    # 1. Analyze Row 0 values and their contiguous runs
     row0 = y[0, :].astype(int)
     diffs = np.diff(row0)
     change_pts = np.where(diffs != 0)[0] + 1
@@ -126,7 +129,7 @@ def validate_y_stim():
     for s, e in zip(run_starts, run_ends):
         runs.append((row0[s], e - s, s, e))
         
-    print(f"\nRow 0 contiguous subject runs detected: {len(runs)}")
+    print(f"\nRow 0 contiguous candidate-index runs detected: {len(runs)}")
     assert len(runs) == 144, f"Expected exactly 144 runs, found {len(runs)}"
     
     # Identify block boundaries (where row0 resets to 1)
@@ -135,18 +138,18 @@ def validate_y_stim():
     assert resets == [0, 44, 96], f"Unexpected resets: {resets}"
     
     blocks = [
-        ("Block 1 (controls / HC)", runs[0:44], 44),
-        ("Block 2 (subtype1 / ADD)", runs[44:96], 52),
-        ("Block 3 (subtype2 / ADHD)", runs[96:144], 48)
+        ("Block 1 (controls-prefix candidate block)", runs[0:44], 44),
+        ("Block 2 (subtype1-prefix candidate block)", runs[44:96], 52),
+        ("Block 3 (subtype2-prefix candidate block)", runs[96:144], 48)
     ]
     
     per_subject_counts = {}
     
     for b_idx, (b_name, b_runs, expected_n_sub) in enumerate(blocks, 1):
         n_subs = len(b_runs)
-        assert n_subs == expected_n_sub, f"Block {b_name} subject count mismatch: {n_subs} != {expected_n_sub}"
+        assert n_subs == expected_n_sub, f"Block {b_name} candidate run count mismatch: {n_subs} != {expected_n_sub}"
         sub_indices = [r[0] for r in b_runs]
-        assert sub_indices == list(range(1, n_subs + 1)), f"Block {b_name} subject indices are non-sequential: {sub_indices}"
+        assert sub_indices == list(range(1, n_subs + 1)), f"Block {b_name} row-0 values are non-sequential: {sub_indices}"
         
         counts = [r[1] for r in b_runs]
         total_trials_block = sum(counts)
@@ -154,7 +157,7 @@ def validate_y_stim():
         end_col = b_runs[-1][3]
         
         print(f"\n{b_name}:")
-        print(f"  Subjects: {n_subs} (indices 1 to {n_subs} strictly ascending)")
+        print(f"  Candidate row-0 runs: {n_subs} (values 1 to {n_subs} strictly ascending)")
         print(f"  Trials: {total_trials_block:,} (columns [{start_col}, {end_col}))")
         print(f"  Min trials/sub: {min(counts)}, Max trials/sub: {max(counts)}, Mean: {np.mean(counts):.1f}")
         
@@ -164,7 +167,11 @@ def validate_y_stim():
         expected_one_hot[b_idx - 1, 0] = 1.0
         
         matches_block = np.all(block_rows13 == expected_one_hot)
-        print(f"  Rows 1-3 one-hot is perfectly {expected_one_hot.ravel().astype(int).tolist()} for all trials: {matches_block}")
+        print(
+            "  Rows 1-3 structurally match the configured block position "
+            f"{expected_one_hot.ravel().astype(int).tolist()} for all columns: "
+            f"{matches_block} (semantics unresolved)"
+        )
         assert matches_block, f"Rows 1-3 do not match expected block indicator in {b_name}"
         
         per_subject_counts[b_name] = counts
@@ -175,19 +182,18 @@ def validate_y_stim():
     assert np.all(col_sums == 1.0), "Rows 1-3 are not strictly one-hot (column sum != 1.0)"
     assert set(np.unique(rows13)) == {0.0, 1.0}, "Rows 1-3 contain values other than 0 and 1"
     
-    print("\n[PASS] y_stim.mat verified:")
-    print("  - Exactly 144 contiguous subject runs spanning all 33,902 columns.")
-    print("  - Zero missing, duplicate, or out-of-order subject indices.")
-    print("  - Block 1 (HC): 44 subjects, 10,129 trials.")
-    print("  - Block 2 (ADD): 52 subjects, 13,031 trials.")
-    print("  - Block 3 (ADHD): 48 subjects, 10,742 trials.")
-    print("  - Rows 1-3 are 100% collinear with the 3 block identities.")
+    print("\n[PASS] y_stim structural diagnostics:")
+    print("  - 144 contiguous row-0 value runs span all 33,902 columns.")
+    print("  - Row-0 values are sequential within the configured ranges.")
+    print("  - Candidate block ranges contain 44, 52, and 48 runs.")
+    print("  - Rows 1-3 match one-hot patterns constant within those ranges.")
+    print("  - These checks do not establish participant identity or clinical labels.")
     
     return runs, per_subject_counts
 
 def validate_sub_name_stim():
     print("\n" + "=" * 70)
-    print("PHASE 3: sub_name_stim.mat VALIDATION")
+    print("PHASE 3: sub_name_stim.mat STRUCTURAL DIAGNOSTICS")
     print("=" * 70)
     
     fpath = os.path.join(DATASET_DIR, "sub_name_stim.mat")
@@ -221,7 +227,7 @@ def validate_sub_name_stim():
                 s = "".join(chr(c[0]) for c in f[str_ref][:])
                 names.append(s)
                 
-            print(f"\nBlock {b} ({prefixes[b]}):")
+            print(f"\nCandidate filename block {b} ({prefixes[b]} prefix):")
             print(f"  Count: {len(names)} unique files: {len(set(names))}")
             assert len(names) == expected_counts[b], f"Count mismatch in block {b}"
             assert len(set(names)) == expected_counts[b], f"Duplicate filename found in block {b}"
@@ -244,30 +250,34 @@ def validate_sub_name_stim():
     assert len(all_filenames) == 144, f"Total filenames mismatch: {len(all_filenames)}"
     assert len(set(all_filenames)) == 144, "Duplicate filenames found across blocks"
     
-    print("\n[PASS] sub_name_stim.mat verified:")
-    print("  - Exactly 3 blocks containing 44, 52, and 48 filenames (144 total).")
+    print("\n[PASS] sub_name_stim structural diagnostics:")
+    print("  - 3 candidate filename blocks contain 44, 52, and 48 entries (144 total).")
     print("  - All 144 filenames are globally unique.")
     print("  - Every filename starts with the respective block prefix ('controls', 'subtype1', 'subtype2').")
     print("  - Filenames within each block are lexicographically sorted (MATLAB dir() convention).")
     print("  - Header timestamp matches y_stim.mat down to the exact second (Fri Feb 22 14:52:45 2019).")
+    print("  - Filename order and prefixes do not verify identity or clinical diagnosis.")
     
     return block_filenames
 
 def validate_boundaries_and_ordering(runs):
     print("\n" + "=" * 70)
-    print("PHASE 4: BOUNDARY CONTINUITY & SIGNAL CORRELATION AUDIT")
+    print("PHASE 4: CANDIDATE-SELECTED BOUNDARY SIGNAL DIAGNOSTICS")
     print("=" * 70)
-    print("Testing empirical signal consistency across all 6 file boundaries (d1/d2 .. d6/d7)...")
+    print(
+        "Comparing signal summaries around six candidate file boundaries; "
+        "ranges are selected using the proposed alignment."
+    )
     
     # 6 file boundaries:
     # d1 ends at 5000, d2 at 10000, d3 at 15000, d4 at 20000, d5 at 25000, d6 at 30000
     boundary_cases = [
-        (1, 2, 4962, 5000, 5000, 5061, "Block 1 (HC) Sub 24", 24),
-        (2, 3, 9851, 10000, 10000, 10129, "Block 1 (HC) Sub 44", 44),
-        (3, 4, 14810, 15000, 15000, 15058, "Block 2 (ADD) Sub 20", 20),
-        (4, 5, 19885, 20000, 20000, 20179, "Block 2 (ADD) Sub 40", 40),
-        (5, 6, 24944, 25000, 25000, 25205, "Block 3 (ADHD) Sub 9", 9),
-        (6, 7, 29860, 30000, 30000, 30150, "Block 3 (ADHD) Sub 30", 30),
+        (1, 2, 4962, 5000, 5000, 5061, "candidate block 1 run 24", 24),
+        (2, 3, 9851, 10000, 10000, 10129, "candidate block 1 run 44", 44),
+        (3, 4, 14810, 15000, 15000, 15058, "candidate block 2 run 20", 20),
+        (4, 5, 19885, 20000, 20000, 20179, "candidate block 2 run 40", 40),
+        (5, 6, 24944, 25000, 25000, 25205, "candidate block 3 run 9", 9),
+        (6, 7, 29860, 30000, 30000, 30150, "candidate block 3 run 30", 30),
     ]
     
     boundary_results = []
@@ -283,7 +293,7 @@ def validate_boundaries_and_ordering(runs):
             slice_a = fa[f"d{fa_idx}"][:, :, a_start - off_a : a_end - off_a]
             slice_b = fb[f"d{fb_idx}"][:, :, b_start - off_b : b_end - off_b]
             
-            # Control slice: take first 38 trials of file fa (a completely different subject)
+            # Comparison slice; its participant relationship is not independently known.
             slice_ctrl = fa[f"d{fa_idx}"][:, :, 0:min(38, slice_a.shape[2])]
             
             # Compute channel variance profile across time, averaged across trials
@@ -298,10 +308,13 @@ def validate_boundaries_and_ordering(runs):
             n_b = b_end - b_start
             print(f"Boundary d{fa_idx}/d{fb_idx} ({label}):")
             print(f"  Split trials: {n_a} in d{fa_idx} + {n_b} in d{fb_idx} = {n_a + n_b} trials")
-            print(f"  Cross-file same-subject variance correlation: r = {corr_same:.4f}")
-            print(f"  Within-file different-subject control correlation: r = {corr_ctrl:.4f}")
+            print(f"  Candidate cross-boundary variance correlation: r = {corr_same:.4f}")
+            print(f"  Within-file comparison-slice correlation: r = {corr_ctrl:.4f}")
             
-            assert corr_same > 0.85, f"Boundary correlation suspiciously low ({corr_same}) for {label}"
+            assert corr_same > 0.85, (
+                f"Candidate boundary diagnostic below threshold "
+                f"({corr_same}) for {label}"
+            )
             
             boundary_results.append({
                 "boundary": f"d{fa_idx}/d{fb_idx}",
@@ -310,14 +323,16 @@ def validate_boundaries_and_ordering(runs):
                 "corr_ctrl": corr_ctrl
             })
             
-    print("\n[PASS] Empirical boundary signal audit passed for all 6 transitions.")
-    print("  Every straddling subject exhibits high cross-boundary anatomical correlation (r >= 0.9084),")
-    print("  directly corroborating the sequential d1 -> d2 -> ... -> d7 trial continuity.")
+    print("\n[PASS] Candidate-selected boundary diagnostics exceeded the configured threshold.")
+    print(
+        "  Similarity is consistent with the proposed alignment but is not "
+        "an independent trial/participant key."
+    )
     return boundary_results
 
 def print_trial_subject_crosswalk_sample(runs, block_filenames):
     print("\n" + "=" * 70)
-    print("PHASE 5: TRIAL -> SUBJECT -> CLINICAL GROUP CROSSWALK SUMMARY")
+    print("PHASE 5: CANDIDATE CROSSWALK EXAMPLES (NOT VERIFIED IDENTITIES/LABELS)")
     print("=" * 70)
     
     file_boundaries = [
@@ -330,13 +345,13 @@ def print_trial_subject_crosswalk_sample(runs, block_filenames):
         ("d7", 30000, 33902),
     ]
     
-    print("First 5 subjects of each clinical group:")
+    print("First 5 candidate row-0 runs in each configured block:")
     for b_idx, (group_name, b_offset, n_subs) in enumerate([
-        ("HC", 0, 44),
-        ("ADD", 44, 52),
-        ("ADHD", 96, 48)
+        ("candidate block 1", 0, 44),
+        ("candidate block 2", 44, 52),
+        ("candidate block 3", 96, 48)
     ]):
-        print(f"\n--- Clinical Group: {group_name} ---")
+        print(f"\n--- {group_name} ---")
         for i in range(5):
             run_idx = b_offset + i
             sub_id, n_trials, start_col, end_col = runs[run_idx]
@@ -348,15 +363,21 @@ def print_trial_subject_crosswalk_sample(runs, block_filenames):
                 if max(start_col, f_start) < min(end_col, f_end):
                     src_files.append(f_name)
                     
-            print(f"  Subject {group_name}_{sub_id:02d} | Trials: {n_trials:3d} | "
-                  f"Global Cols: [{start_col:5d}, {end_col:5d}) | Files: {','.join(src_files):7s} | "
-                  f"Candidate File: {fname}")
+            print(
+                f"  Candidate participant mapping {group_name}_{sub_id:02d} | "
+                f"Trials: {n_trials:3d} | Candidate metadata columns: "
+                f"[{start_col:5d}, {end_col:5d}) | Candidate source files: "
+                f"{','.join(src_files):7s} | Candidate filename: {fname}"
+            )
 
 def main():
     print("======================================================================")
-    print("ADHD-EEG RESEARCH: SPRINT 1 MAPPING VALIDATION TOOL")
+    print("ADHD-EEG RESEARCH: CANDIDATE MAPPING STRUCTURAL DIAGNOSTICS")
     print("======================================================================")
-    print("Constraints: Read-only, no modifications, no preprocessing, no training.")
+    print(
+        "Read-only structural diagnostics only; no verified participant/diagnosis "
+        "mapping, real-data split, preprocessing, or training is produced."
+    )
     
     eeg_summary = validate_eeg_files()
     runs, per_subject_counts = validate_y_stim()
@@ -365,17 +386,16 @@ def main():
     print_trial_subject_crosswalk_sample(runs, block_filenames)
     
     print("\n" + "=" * 70)
-    print("VALIDATION SUMMARY & GATE 1 VERDICT")
+    print("STRUCTURAL CHECK SUMMARY (NOT A GATE OR PROVENANCE VERDICT)")
     print("=" * 70)
-    print("1. Raw EEG shape and dtypes: VALIDATED (all 7 files conform exactly)")
-    print("2. Sequential EEG file ordering d1..d7: VALIDATED (proven by chronological timestamps + signal continuity r > 0.90)")
-    print("3. y_stim row 0 subject runs: VALIDATED (144 contiguous runs, 0 missing/duplicate/impossible)")
-    print("4. Clinical group trial counts: VALIDATED (HC: 10,129, ADD: 13,031, ADHD: 10,742)")
-    print("5. Composite Subject ID grouping (group_block, subject_idx): VALIDATED (144 mutually exclusive groups)")
-    print("6. sub_name_stim filename-to-index ordinal mapping: STRONGLY SUPPORTED (MATLAB dir() order, identical timestamp, unkeyed)")
-    print("7. Clinical diagnosis assignment (controls->HC, subtype1->ADD, subtype2->ADHD): VALIDATED (paper Section 2.1 & count match)")
-    print("\nGATE 1 VERDICT:")
-    print("VALIDATED (Composite subject mapping & group assignment are robust and leak-free for cross-validation).")
+    print("1. Raw EEG shapes/dtypes: structural checks passed for all seven files.")
+    print("2. File-order/boundary diagnostics: consistent with configured candidate order only.")
+    print("3. y_stim row-0 run/count checks: structural checks passed; runs are candidate mappings.")
+    print("4. Configured block totals and rows 1-3 patterns: structural consistency only.")
+    print("5. Filename counts, prefixes, and sorting: structural checks only.")
+    print("6. EEG trial-to-y_stim alignment, participant identities, and clinical diagnoses:")
+    print("   NOT VERIFIED by this script; candidate group blocks are not clinical labels.")
+    print("7. Participant-independent split safety: NOT ESTABLISHED.")
     print("======================================================================")
 
 if __name__ == "__main__":

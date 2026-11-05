@@ -26,7 +26,14 @@ Evidence sources are the Sprint 1 report, [trial_subject_mapping_validation.md](
 | Meaning of position 385 | **UNRESOLVED** | The paper's nominal duration/rate and reported model length conflict by one position; neither paper nor data headers explains whether it is an endpoint or another convention. Do not crop or reinterpret it. |
 | 56-channel identity/mapping | **UNRESOLVED** | `chan.mat` has 60 channel entries and EEG arrays have 56 columns. The correspondence and four absent entries are unknown; do not infer their identities. |
 
-**Sprint 1 evidence note:** The Sprint 1 report (§§7–9, 12, 15–16) declares the sequential EEG-file-to-column mapping and trial-to-subject/group mapping validated, citing all six boundary correlations, contiguous subject runs, and exact cohort-count agreement. It classifies filename ordinal-to-index linkage as strongly supported, not validated. Earlier audit text still calls the trial join unproven ([ADHD_EEG_PREPROCESSING_AUDIT.md](ADHD_EEG_PREPROCESSING_AUDIT.md), §§4–5, 13; [ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md](ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md), §§5–6). For this contract, use the later, dedicated Sprint 1 report's validated composite key while retaining the filename-linkage caveat and recording the contradictory audit text for reconciliation before implementation.
+**Sprint 1 evidence reconciliation:** The Sprint 1 mapping report historically called the sequential EEG-file-to-column and trial-to-subject/group mappings validated, citing boundary correlations, contiguous row-0 runs, and aggregate count agreement. The later evaluation-readiness, evidence-reconciliation, provenance, and external-provenance audits find that these observations do not establish an independent join. This contract does **not** accept the earlier validated-key conclusion: the composite key remains a candidate participant mapping, the EEG-locator-to-`y_stim` correspondence remains unresolved, and the candidate diagnostic-group mapping is not a verified clinical diagnosis. The original report's stronger verdict is retained here as a historical finding, not an accepted status.
+
+### Terminology boundary
+
+- **Source-local trial identifier:** `(source_filename, within_file_trial_index)` locates an array slice in the supplied files. It does not identify a participant or diagnosis.
+- **Candidate participant mapping:** The deterministic composite key formed from a configured group block and `y_stim` row-0 value. Neither the row-0 interpretation nor its correspondence to an EEG locator is independently verified.
+- **Candidate diagnostic-group mapping:** A configured block name such as `HC`, `ADD`, or `ADHD`; it is not an established clinical label for any local trial or participant.
+- **Verified clinical diagnosis label:** No participant-level, identity-keyed diagnosis record linked to the local trial locators is currently available in the inspected evidence. `y_stim` rows 1–3 are not clinical targets.
 
 ## 2. Preprocessing decisions
 
@@ -51,7 +58,7 @@ No signal-changing transformation is approved. A future change to a deferred ite
 
 | Question | Evidence-supported decision |
 |---|---|
-| Split unit | **Subject is the required grouping unit** for any claim about generalization to unseen participants. Keep every trial assigned to a subject in one partition. This is a methodological requirement, not a claim about the base paper. The Sprint 1 report supplies the composite key `(<clinical-group block>, <within-block subject index>)`; its filename ordinal mapping remains strongly supported only. |
+| Split unit | For a future claim about generalization to unseen participants, the required unit is the **verified participant identity**, with every trial for that identity in one partition. The current composite candidate key cannot establish this requirement or be used as if it were verified. |
 | GroupKFold / StratifiedGroupKFold | Grouped splitting is required in principle. Neither `GroupKFold` nor `StratifiedGroupKFold` is selected as the exact method. The 5-fold stratified proposal in [ML_EXECUTION_PLAN.md](ML_EXECUTION_PLAN.md), §1D, and the Sprint Map is explicitly proposed, not frozen. |
 | Number of folds | **UNRESOLVED / DECISION REQUIRED.** Five folds is a proposal, not an evidence-backed frozen value. |
 | Held-out test set | **UNRESOLVED / DECISION REQUIRED.** The paper analysis records that He et al. describe 6,000 test trials and five-fold validation over the remainder, but do not establish subject grouping. This paper procedure does not determine our test design. See [base-paper-analysis.md](base-paper-analysis.md), §8, and [ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md](ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md), §10. |
@@ -63,7 +70,7 @@ The paper's split description does **not** prove participant overlap, trial-leve
 
 ## 4. Required leakage controls
 
-- **Subject assignment:** Attach the Sprint 1 composite subject key and group before partition assignment. Use the composite key, not row-0 index alone. Keep all trials for a subject in one partition; do not split individual trials across partitions. Resolve the documented filename-order caveat before relying on filename identities.
+- **Participant assignment:** Only after an authoritative participant crosswalk is obtained and the evaluation protocol is approved, keep all trials for each verified participant in one partition. The current candidate composite key may be exercised only in synthetic tests; it must not be presented as a verified identity or used to create research partitions.
 - **Preprocessing statistics:** Fit any data-dependent statistic or transform separately within each training partition/fold. Do not calculate parameters over all subjects before splitting.
 - **Normalization:** If later approved, fit means, variances, clipping limits, or other scaling parameters using training subjects only, then apply those fixed parameters to that fold's validation/test subjects. No whole-dataset normalization.
 - **Feature extraction:** Fix deterministic feature definitions and settings before held-out evaluation. Any data-driven band/channel/feature selection or learned transform must be fitted only within training data; do not inspect held-out labels or outcomes to choose features.
@@ -82,14 +89,22 @@ This is a **no-transformation input contract**, not authorization to create a de
 | Raw source | Immutable `dataset/d1.mat`–`dataset/d7.mat`; do not rewrite or replace source files. |
 | Trial input | Observed shape `(385, 56)` in stored axis order: sample/time positions × anonymous channel columns. Preserve all 385 positions and all 56 columns. |
 | Dtype | Preserve source `float32`; do not silently cast or scale. |
-| Subject metadata | Globally unique key composed from group block and within-block subject index, as documented in Sprint 1. Filename identity is optional and remains strongly supported, not independently verified. |
-| Clinical group metadata | `HC`, `ADD`, or `ADHD` from the Sprint 1 block mapping. Keep this metadata separate from EEG input; `y_stim` rows 1–3 are not to be used as diagnostic targets. |
-| Split unit | Subject key. No subject may occur in multiple partitions. Exact splitter, folds, seed, test design, and validation protocol remain unresolved. |
+| Source-local trial identifier | `(source_filename, within_file_trial_index)` locates a trial slice; `trial_id` is its serialized form. These identifiers do not encode participant identity. |
+| Candidate participant mapping | `candidate_participant_id`, currently derived from configured block and row-0 value. Candidate only; correspondence to each EEG locator and verified identity remain unresolved. |
+| Candidate diagnostic-group mapping | `candidate_diagnostic_group`, currently the configured block name. This is not a verified clinical label. |
+| Verified clinical diagnosis label | Not available from the inspected evidence. Do not assign diagnoses from candidate groups, filenames, aggregate counts, or `y_stim` rows 1–3. |
+| Split unit | Verified participant identity, once an authoritative crosswalk and diagnosis evidence are available and the protocol is approved. No current real-data partition is authorized. |
 | Preprocessing status | Raw trial values unchanged. No preprocessing has been run or is approved by this document. |
-| Allowed before Gate 2 approval | Read-only structural/integrity checks, bounded loading for inspection, and non-mutating attachment of Sprint 1 metadata for contract validation. No persisted processed EEG tensors. |
+| Allowed before Gate 2 approval | Read-only structural/integrity checks, bounded loading for inspection, and non-mutating attachment of explicitly candidate Sprint 1 mappings for contract validation. No persisted processed EEG tensors. |
 | Prohibited | Filtering, notch filtering, ICA, cropping/resampling/re-epoching, baseline correction, normalization, artifact rejection/repair, channel reordering/mapping, PSD/TBR or other derived features, full-dataset statistics, model construction, and training/evaluation. |
 
 Still unresolved before implementation: physical interpretation of the 385th position; amplitude units/reference; channel identity map; downloaded-file ICA state; rationale and parameters for any signal-changing operation; whether normalization or spectral features are needed; filename ordinal confirmation; fold count and exact grouped splitter; held-out test design; random seed; class-balancing method; and validation/model-selection design. The split and preprocessing decisions must be completed and reviewed before derived-data construction or training.
+
+## API naming and migration note
+
+The public metadata names were changed to make their candidate status explicit: `subject_id` → `candidate_participant_id`, `clinical_group` → `candidate_diagnostic_group`, `y_stim_column` → `candidate_y_stim_column`, `iter_subject()` → `iter_candidate_participant()`, and `iter_group()` → `iter_candidate_diagnostic_group()`. No compatibility aliases are provided: the old unqualified names can be mistaken for verified identities, clinical diagnoses, or metadata correspondence. Callers must migrate to the candidate names and retain the provenance caveat.
+
+The preprocessing review schema follows the same rule: `SubjectICAReview` is replaced by `CandidateParticipantICAReview`, and the JSON mapping key `subjects` is replaced by `candidate_participants`. Preprocessing metadata uses `candidate_participant_count` and `ica.candidate_participants`; the output explicitly labels the grouping key as candidate. These are API/schema changes, not claims that ICA behavior or grouping has been scientifically validated.
 
 ## 6. Gate 2 verdict
 

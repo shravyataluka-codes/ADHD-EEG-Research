@@ -1,5 +1,14 @@
 # Comprehensive Guide: EEG-Transformer Paper Deep-Dive & Optimal Hybrid Conformer Solution for ADHD Classification
 
+> [!WARNING]
+> **Historical proposal; provenance and evaluation claims superseded.** This guide
+> is not an approved protocol or evidence that training occurred. Its old
+> `subject_id`, clinical-label, and leakage-free evaluation claims are unsupported:
+> available metadata provides candidate participant/group mappings only.
+> `y_stim` rows 1–3 have observed one-hot structure but are not verified clinical
+> labels. The trial/metadata correspondence and participant identities remain
+> unverified, so no participant-independent evaluation claim is warranted.
+
 ---
 
 ## Table of Contents
@@ -30,7 +39,7 @@
 ## 1. Executive Overview & Problem Statement
 
 ### Problem Statement
-Develop a Transformer-based deep learning system for automatic ADHD detection using EEG brain signals. The project addresses the challenge of subjective and time-consuming ADHD diagnosis by learning attention-related brain activity patterns directly from EEG recordings. The system aims to support clinicians through objective and AI-assisted screening.
+Proposed future research direction: evaluate whether an EEG model can distinguish clinically labeled cohorts, if verified trial-to-participant mappings and clinical targets become available. This guide does not establish that the current metadata supports this task or that the system can support clinical screening.
 
 ### Approved Technology Stack
 * **Programming Language:** Python 3.x
@@ -48,11 +57,11 @@ Develop a Transformer-based deep learning system for automatic ADHD detection us
 * **Title:** Classification of attention deficit/hyperactivity disorder based on EEG signals using a EEG-Transformer model
 * **Journal:** *Journal of Neural Engineering* (*J. Neural Eng.* 20 (2023) 056013)
 * **Authors:** Yuchao He, Xin Wang, Zijian Yang, Lingbin Xue, Yuming Chen, Junyu Ji, Feng Wan, Subhas Chandra Mukhopadhyay, Lina Men, Michael Chi Fai Tong, Guanglin Li, Shixiong Chen (Shenzhen Institute of Advanced Technology, Chinese Academy of Sciences & CUHK).
-* **Objective:** Replace subjective DSM-5 behavioral assessments with an objective, automatic, multi-class deep learning screening tool (differentiating Healthy Controls, ADD, and ADHD) using 56-channel EEG signals.
+* **Proposed objective:** Explore EEG classification for cohorts with independently verified diagnoses, if valid trial-to-participant mappings and labels become available. No current clinical screening capability is established.
 
 ### 1.2 Dataset Specifications & Preprocessing
 * **Source:** Open-source dataset from the Technical University of Dresden, Germany (`https://osf.io/6594x/`).
-* **Subjects:** 144 children (48 ADHD, 52 ADD, 44 Healthy Controls). Groups matched for age, sex, and IQ without severe psychiatric comorbidities.
+* **Paper-reported cohort:** 144 children (48 ADHD, 52 ADD, 44 Healthy Controls). The current candidate filename/group metadata has not been independently linked to verified participant identities or diagnoses.
 * **Recording Setup:** 56 electrode channels sampled at 256 Hz.
 * **Artifact Removal:** Independent Component Analysis (ICA) used to filter ocular (EOG) and cardiac (ECG) noise.
 * **Epoch Slicing:** Continuous EEG partitioned into 33,902 total 1.5-second trials (10,742 ADHD, 13,031 ADD, 10,129 HC).
@@ -133,7 +142,7 @@ INPUT: Raw EEG Matrix (385 timepoints × 56 channels)
 
 While the paper reports high accuracy (95.58%), its methodology contains 5 critical flaws that prevent real-world clinical deployment:
 
-1. **Trial-Level Data Leakage (Critical Flaw):** The paper randomly split 33,902 trials into train/test sets across folds. Because each subject contributed ~235 trials, trials from the *exact same patient* appeared in both training and testing splits. The model memorized individual patient brain signatures rather than learning generalizable ADHD biomarkers.
+1. **Evaluation-unit uncertainty:** The available paper description does not establish whether folds were participant-independent. Trial-level leakage is a concern to investigate, not a confirmed flaw or demonstrated memorization.
 2. **Ignored 3D Scalp Topography:** Feeding raw channel sequences directly into sequence self-attention treats 56 channels as unorganized tokens, ignoring physical electrode positions and volume conduction across the scalp.
 3. **Absence of Clinical Domain Features:** Pure deep attention treats voltage signals as abstract numbers, ignoring well-established neurobiological biomarkers such as frequency band powers and the **Theta/Beta Ratio (TBR)**.
 4. **Quadratic Complexity for Micro-Spikes:** Pure sequence self-attention over raw sampling points requires $O(T^2)$ compute and requires a massive 506k parameter footprint to capture fast local voltage micro-spikes.
@@ -202,14 +211,14 @@ INPUT 2: MNE Spectral Vector (56 Channels × 6 Features = 336 Features) ──�
 
 ### 3.4 Leakage-Free Validation (`StratifiedGroupKFold`)
 * Implements `sklearn.model_selection.StratifiedGroupKFold(n_splits=5)`.
-* Grouped strictly by `subject_id` (144 subjects).
-* Guarantees 100% of test subject trials remain unseen during model training.
+* The earlier proposal grouped by `subject_id` (144 presumed subjects); this is not a verified identity mapping.
+* A generic grouped split can isolate caller-supplied keys only. It cannot guarantee that those keys represent distinct participants or establish participant-independent evaluation.
 
 ### 3.5 Training & Optimization Pipeline
 * **Optimizer:** AdamW (initial lr = $10^{-3}$, weight decay = $10^{-4}$).
 * **LR Scheduler:** Cosine Annealing with Warm Restarts.
 * **Loss Function:** Categorical Cross-Entropy / Focal Loss.
-* **Early Stopping:** Monitored on subject-unseen validation loss (patience = 20 epochs).
+* **Early Stopping:** Proposed only; no subject-unseen validation result exists, and participant-independent evaluation requires verified participant keys.
 
 ### 3.6 Clinical Explainability
 * **Scalp Topomaps (`mne.viz.plot_topomap`):** Projects self-attention weights back to 2D head topography to verify fronto-central activation.
@@ -265,10 +274,10 @@ INPUT 2: MNE Spectral Vector (56 Channels × 6 Features = 336 Features) ──�
 ```
 
 ### Execution Phases
-* **Phase 1: Environment & MNE Preprocessing:** Ingest raw EEG, apply 0.5–45Hz bandpass + notch filter, run ICA artifact removal, and slice 1.5s epochs with `subject_id` metadata.
+* **Phase 1: Environment & MNE Preprocessing:** Proposed pipeline only; the candidate participant mapping is not verified identity metadata.
 * **Phase 2: Feature Engineering & Dataset Pipeline:** Extract band powers and Theta/Beta Ratios using MNE Welch PSD. Format raw tensors `(B, 385, 56)` and spectral vectors `(B, 336)`.
 * **Phase 3: Hybrid Conformer Model Building:** Construct PyTorch/TensorFlow depthwise spatial conv layer, 1D local conv + self-attention Conformer blocks, fusion head, and Softmax output.
-* **Phase 4: Subject-Wise Training & Evaluation:** Run 5-fold `StratifiedGroupKFold` by `subject_id`. Optimize with AdamW and Cosine Annealing. Evaluate un-leaked ROC-AUC and F1 scores.
+* **Phase 4: Grouped Training & Evaluation:** Not authorized or performed. A future participant-independent evaluation requires independently verified participant keys and clinical labels; candidate keys cannot support an "un-leaked" claim.
 * **Phase 5: Explainability & Visualization:** Generate 2D scalp attention topomaps and frequency importance heatmaps.
 
 ---
@@ -284,8 +293,8 @@ INPUT 2: MNE Spectral Vector (56 Channels × 6 Features = 336 Features) ──�
   * *A:* DeepConvNet's 4-layer depth lacked sufficient dropout regularization, causing severe over-fitting on small EEG trial samples (75.08% ± 17.83%).
 
 ### 5.2 Questions & Answers Defending Your Optimal Solution
-* **Q: The paper reported 95.58% accuracy. Why call its cross-validation flawed?**
-  * *A:* The paper used a random trial-level split. Because each subject contributed ~235 trials, trials from the same subject appeared in both train and test sets (**data leakage**). My solution uses `StratifiedGroupKFold` grouped by `subject_id` to evaluate true clinical generalization on unseen patients.
+* **Q: The paper reported 95.58% accuracy. Was its cross-validation flawed?**
+  * *A:* The split protocol cannot be confirmed from the available evidence. Trial-level leakage is a concern to investigate, not an established fact. A future grouped split would only support participant-independent evaluation if the group keys and clinical labels are independently verified.
 * **Q: Why add an MNE-Python feature branch if attention can extract features automatically?**
   * *A:* Clinicians rely on established spectral biomarkers—specifically the elevated **Theta/Beta Ratio (TBR)** in frontal channels. Fusing MNE spectral features with deep Conformer embeddings grounds the deep neural network in psychiatric neurobiology.
 * **Q: Why use a Conformer instead of a pure Transformer?**

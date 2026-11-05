@@ -6,6 +6,16 @@ Purpose: Research methodology record
 
 This document records a read-only methodology audit of the proposed preprocessing and modeling pipeline. It does not authorize preprocessing and does not replace an approved experiment protocol.
 
+> [!WARNING]
+> **Historical provenance correction:** Row-0 runs, filename blocks, and rows
+> 1–3 one-hot patterns are structural observations and candidate mappings only.
+> Their correspondence to EEG trials, participant identities, and clinical
+> diagnoses is not independently verified. The semantics of rows 1–3 are
+> unresolved; they are not established stimulus indicators or clinical targets.
+> Any earlier proposal to derive diagnosis from block position or use candidate
+> keys for participant-independent splits is superseded pending verified source
+> records. No real-data split or training experiment is reported here.
+
 ## 1. Dataset acquisition status
 
 The remaining raw EEG files were acquired from the official OSF project associated with the base paper, node `6594x`.
@@ -53,17 +63,16 @@ Evidence classification:
 `y_stim.mat`:
 
 - Shape: `(4, 33902)`.
-- Row 0 contains within-group subject indices and resets between subject groups.
+- Row 0 contains values in contiguous runs that reset between configured ranges; interpreting these as participant indices is a candidate mapping.
 - Rows 1-3 are mutually exclusive binary indicators.
 - The three rows have counts of 10,129, 13,031, and 10,742.
-- These rows represent three stimulus/task categories in structure, but their physical names are unresolved.
-- They are not the HC, ADD, and ADHD diagnostic labels.
+- Their one-hot structure is observed, but their semantic meaning is unresolved.
+- They are not verified HC, ADD, or ADHD diagnostic labels.
 
 Evidence classification:
 
 - Shape, binary structure, exclusivity, and counts: **VERIFIED FROM BINARY DATA**.
-- Stimulus-category interpretation: **STRONGLY SUPPORTED**.
-- Exact physical meaning of each category: **UNKNOWN**.
+- Semantic interpretation: **UNKNOWN**.
 
 `sub_name_stim.mat`:
 
@@ -212,14 +221,14 @@ The final two items are experimental design and model decisions rather than prep
 - **Approval:** Training-only standardization requires approval and a frozen statistic-fitting protocol.
 - **Evidence classification:** **UNKNOWN**, **MODEL REQUIREMENT**.
 
-### 4.11 Construct diagnostic labels
+### 4.11 Candidate diagnostic-label mapping (not authorized)
 
-- **Decision:** Use only after deterministic subject/trial mapping is validated.
-- **Evidence:** The paper reports HC, ADD, and ADHD groups. `sub_name_stim.mat` contains blocks of 44, 52, and 48 subjects. `y_stim.mat` rows 1-3 are stimulus indicators, not diagnostic labels.
-- **Justification:** Diagnostic labels must come from participant-group metadata, not stimulus rows.
+- **Decision:** Do not construct clinical labels from the available candidate metadata.
+- **Evidence:** The paper reports HC, ADD, and ADHD cohorts. `sub_name_stim.mat` contains filename blocks of 44, 52, and 48 entries. These counts and prefixes do not independently establish trial-to-participant or participant-to-diagnosis correspondence. `y_stim` rows 1–3 have unresolved semantics.
+- **Justification:** Neither candidate block position nor rows 1–3 are verified clinical labels.
 - **Risk:** Mislabeling trials if file order or group-block boundaries are assumed incorrectly.
-- **Approval:** Requires explicit validation and approval of the mapping rule.
-- **Evidence classification:** **VERIFIED FROM PAPER**, **VERIFIED FROM BINARY DATA**, **STRONGLY SUPPORTED**.
+- **Approval:** Blocked pending an authoritative trial/participant/diagnosis crosswalk and explicit research approval.
+- **Evidence classification:** **PAPER-REPORTED COHORTS; LOCAL LABEL MAPPING UNVERIFIED**.
 
 ### 4.12 Use spatial channel mapping or scalp topomaps
 
@@ -247,11 +256,11 @@ Randomly splitting the 33,902 trials can place trials from the same child in tra
 
 **Classification:** **STRONGLY SUPPORTED**, **UNKNOWN** regarding the paper's exact implementation.
 
-### Subject-level splitting
+### Participant-level splitting (conditional)
 
-All trials from a subject must remain in one partition for the primary generalization evaluation. Group identifiers must be globally unique because row 0 of `y_stim.mat` resets within diagnostic groups.
+For a future participant-independent evaluation, all trials from each verified participant must remain in one partition. The current block/index identifiers are candidate mappings only and are not verified participant keys; the requirement cannot be enforced on the real dataset until the join is verified.
 
-**Classification:** **MODEL REQUIREMENT**, **STRONGLY SUPPORTED**.
+**Classification:** **MODEL REQUIREMENT**, **UNIMPLEMENTABLE UNTIL PARTICIPANT MAPPING IS VERIFIED**.
 
 ### Normalization leakage
 
@@ -281,13 +290,13 @@ The minimally transformed baseline is:
 4. Preserve the original numeric values and `float32` dtype where possible.
 5. Do not crop the 385th sample.
 6. Do not re-epoch, baseline-correct, filter, notch-filter, or rerun ICA.
-7. Attach only validated subject and diagnostic-group metadata.
-8. Keep `y_stim` stimulus categories as separate metadata, not target labels.
-9. Split strictly by globally unique subject ID.
+7. Keep participant and diagnostic-group fields as candidate metadata until their provenance is verified.
+8. Keep `y_stim` rows 1–3 as uninterpreted metadata; do not use them or block position as clinical target labels.
+9. Do not claim participant-independent splitting using candidate IDs; verify the participant mapping before assigning real-data partitions.
 10. Fit any optional standardization on training subjects only.
 11. Write derived data only to a new, versioned output location after protocol approval.
 
-This baseline is intended to establish a leakage-controlled reference before adding transformations or spectral/spatial feature branches.
+This historical baseline proposal does not establish a leakage-controlled reference unless participant and diagnosis mappings are independently verified.
 
 ## 7. Unresolved questions
 
@@ -317,10 +326,10 @@ The following questions must be answered before preprocessing begins:
 ### Dataset and labels
 
 - [ ] Approve the expected `(385, 56, trials)` representation for all seven files.
-- [ ] Approve the validated file-to-`y_stim` trial ordering.
-- [ ] Approve the diagnostic label mapping from subject metadata.
+- [ ] Obtain independent verification of the file-to-`y_stim` trial ordering.
+- [ ] Obtain authoritative participant-level diagnostic labels linked to the trial locators.
 - [ ] Confirm that `y_stim` stimulus rows will not be used as HC/ADD/ADHD labels.
-- [ ] Approve globally unique subject IDs combining group block and within-group index.
+- [ ] Verify whether the candidate group-block/row-0 key corresponds to participant identities before using it as a split group.
 
 ### Signal processing
 
@@ -345,7 +354,7 @@ The following questions must be answered before preprocessing begins:
 
 ### Evaluation and reproducibility
 
-- [ ] Approve subject-level grouped splitting as the primary evaluation rule.
+- [ ] Approve participant-grouped splitting only after the participant crosswalk is independently verified.
 - [ ] Approve the fold count, random seed, and fixed test protocol.
 - [ ] Approve training-only fitting for all adaptive preprocessing and feature operations.
 - [ ] Approve class weighting, if used, based only on training subjects.

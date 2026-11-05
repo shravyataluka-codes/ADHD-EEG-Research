@@ -259,7 +259,7 @@ These labels describe the **evidence and current project position**, not a recom
 - The paper reports ICA/noise removal before trial division, but only at a high level. This supports discussion of what the paper claims, not faithful reproduction or an automatic second ICA pass.
 - The stored shape is `(385, 56)` per trial. Preserving all positions and columns is the current documented constraint; the physical meaning of position 385 and the channel identities are not thereby resolved.
 - The distinction between fixed operations and fitted/data-selected operations is important: fitted means, ICA decompositions, quality thresholds, and feature selection need training-only rules to avoid leakage.
-- The local trial-to-subject grouping crosswalk has a later dedicated validation report, but that does not settle signal processing.
+- A historical report examined the proposed local trial-to-participant mapping, but its validation verdict is superseded: the crosswalk remains unverified and does not settle signal processing.
 
 ## B. Operations requiring an explicit decision
 

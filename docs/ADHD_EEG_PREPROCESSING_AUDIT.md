@@ -4,6 +4,15 @@ Status: AUDIT IN PROGRESS / PREPROCESSING NOT AUTHORIZED
 
 This is a mandatory research checkpoint. It records a read-only structural audit and a methodology review; it is not permission to transform or write EEG data. The previous audit at [dataset-preprocessing-audit.md](dataset-preprocessing-audit.md) is preserved and remains part of the project history. Where that document described sequential file ordering as strongly supported, this audit states the limitation more strictly: the EEG blocks contain no embedded trial identifiers, so the file-to-metadata join has not been independently proven.
 
+> [!WARNING]
+> **Provenance clarification:** Candidate row-0 participant mappings, filename
+> ordinals, and candidate diagnostic-group mappings are not verified identities,
+> trial joins, or clinical diagnosis labels. The binary one-hot pattern in
+> `y_stim` rows 1–3 is observed, but its semantics are unresolved. Earlier
+> descriptions of these rows as known stimulus/task indicators and any conclusion
+> that candidate keys are safe split groups are superseded by Sprint 2 evidence
+> reconciliation. A generic split utility cannot establish participant independence.
+
 Evidence labels used throughout are defined in Section 14. Statements about expected joins are marked as conditional/inference rather than as binary facts.
 
 ## 1. Research objective
@@ -60,11 +69,11 @@ The EEG datasets are chunked `(192, 56, 1)` and gzip-compressed. Their stored HD
 
 ### Exact candidate methodology
 
-1. Interpret `y_stim` row 0 as the within-block subject index: observed values are integer-valued and reset to 1 at the starts of the three blocks. It produces exactly 144 contiguous subject runs: indices 1–44, then 1–52, then 1–48, with no missing, invalid, or non-contiguous index run inside a block. [VERIFIED FROM BINARY DATA]
+1. `y_stim` row 0 contains integer-valued runs that reset at three configured ranges. These form 144 contiguous candidate index runs with values 1–44, 1–52, and 1–48; participant identity is not verified. [STRUCTURAL OBSERVATION]
 2. Interpret the three `sub_name_stim` referenced cell blocks in order. Their lengths are 44, 52, and 48; every filename is unique both within and across the three blocks. All filenames in block 1 contain `controls`, block 2 contain `subtype1`, and block 3 contain `subtype2`. [VERIFIED FROM BINARY DATA]
-3. Candidate identity for a trial is therefore `(metadata block, row-0 subject index)`. If the cell-array order corresponds to row-0 index order, metadata entry `i` in that block supplies its participant filename. A globally unique split group key must retain both the block/group and the within-block index; row 0 by itself repeats across blocks. [STRONGLY SUPPORTED for the block/index relationship; INFERENCE for filename ordinal linkage]
+3. A candidate key can be constructed from `(metadata block, row-0 value)`. This is unique by construction, but does not establish participant identity or a safe participant split. The row-0-to-filename ordinal correspondence is unverified. [STRUCTURAL OBSERVATION / UNVERIFIED MAPPING]
 4. Candidate global trial interval for a subject is the contiguous run of that subject's row-0 value inside its block. The per-subject intervals are exactly reconstructible from the starting global position below plus the cumulative sum of earlier subject counts in the ordered count vector. [VERIFIED FROM BINARY DATA for row runs; INFERENCE for assigning those runs to EEG files]
-5. Candidate clinical group assignment is block 1 = HC/controls, block 2 = ADD/subtype1, block 3 = ADHD/subtype2. This interpretation is strongly supported by filename tokens and the paper's subject and trial counts, but the MAT files do not provide an explicit diagnosis field keyed to each participant. [STRONGLY SUPPORTED, not VERIFIED FROM BINARY DATA]
+5. Candidate diagnostic-group mapping associates blocks with `controls`, `subtype1`, and `subtype2` filename prefixes and the paper-reported cohorts. It is not a verified per-participant clinical diagnosis; no keyed diagnosis field is present in the MAT files. [CANDIDATE MAPPING]
 
 ### Group boundaries and counts
 
@@ -86,15 +95,15 @@ Within each line, the first number is the count for subject index 1, the second 
 
 ### Ambiguity checks and split safety
 
-- No invalid subject index, missing subject run, duplicate subject filename, or non-one-hot stimulus column was found. The row-0 runs cover all 33,902 columns, have positive lengths, and partition into 44/52/48 subjects. [VERIFIED FROM BINARY DATA]
-- `y_stim` shape is `(4, 33902)`. Rows 1–3 are binary and exactly one of the three indicators is active for every column. Their column sums are 10,129, 13,031, and 10,742. These are stimulus/task indicators by structure and paper-count alignment, not clinical diagnostic labels. Their physical category names remain unknown. [VERIFIED FROM BINARY DATA for structure; STRONGLY SUPPORTED for stimulus interpretation; UNKNOWN for category meanings]
+- No invalid row-0 value or one-hot structural violation was reported. The runs cover 33,902 metadata columns and have counts 44/52/48; these are structural counts, not verified participants. [STRUCTURAL OBSERVATION]
+- `y_stim` shape is `(4, 33902)`. Rows 1–3 are binary and exactly one value is active per column in the reported inspection. Their semantics are unresolved; they are not established stimulus indicators or clinical labels. [STRUCTURAL OBSERVATION; SEMANTICS UNKNOWN]
 - **Mapping result:** Metadata-based subject grouping is deterministic if block order and within-block index semantics are accepted. The candidate sequential d-file-to-column map is also deterministic arithmetically. However, no independent trial identifier proves the d-file order-to-`y_stim` column join or the `sub_name_stim` filename ordinal-to-row-0 index join. Therefore the full trial-to-person crosswalk is **not yet validated**, and the candidate key is **not yet authorized as a safe split key**. Obtain authoritative ordering confirmation or other independent evidence before treating it as validated. [VERIFIED FROM BINARY DATA for internal consistency; UNKNOWN for cross-file provenance]
 
 ## 6. Metadata interpretation
 
 | Metadata | Verified observation | Interpretation and limit |
 |---|---|---|
-| `y_stim` | `(4, 33902)`; row 0 has three sequential index blocks; rows 1–3 are exhaustive one-hot indicators | Row 0 is a within-block participant index [STRONGLY SUPPORTED]. Rows 1–3 are distinct trial categories [STRONGLY SUPPORTED]; exact physical names are UNKNOWN. They must not be used as ADHD/ADD/HC targets. |
+| `y_stim` | `(4, 33902)`; row 0 has three candidate value ranges; rows 1–3 have one-hot structure | Row-0 participant interpretation and rows 1–3 semantics are unverified. Neither rows nor candidate block position is an established clinical target. |
 | `sub_name_stim` | Three ordered referenced blocks with 44, 52, and 48 unique filename strings | Filename tokens are `controls`, `subtype1`, `subtype2` respectively [VERIFIED FROM BINARY DATA]. Interpreting them as HC, ADD, ADHD is STRONGLY SUPPORTED by paper counts, but is not an explicit participant diagnosis field. |
 | `chan` | MATLAB struct with 60 labels and associated channel fields | EEG data has 56 columns. Exact mapping and four absent entries are UNKNOWN; no spatial location mapping is approved. |
 
@@ -112,7 +121,7 @@ These are candidates to audit, not instructions to execute:
 8. Re-epoch, crop, or otherwise handle 385 positions as nominal 1.5-second epochs.
 9. Normalize or standardize raw samples/features.
 10. Derive spectral powers (delta/theta/alpha/beta/gamma), theta/beta ratios, or other features.
-11. Construct clinical labels from subject/group metadata while retaining `y_stim` separately.
+11. Construct clinical labels only if an authoritative diagnosis-to-participant record and trial join are verified; retain `y_stim` as uninterpreted metadata unless its semantics are established.
 12. Map channels to physical locations or build spatial/topographic representations.
 13. Split train/validation/test data and select class weighting or sampling.
 14. Write a derived representation for a future Transformer/Conformer model.
@@ -131,7 +140,7 @@ These are candidates to audit, not instructions to execute:
 | Artifact handling | Reject, interpolate, or repair trials/channels | No thresholds, labels, or supported rejection rule in available evidence [UNKNOWN] | Selective data loss and differential group bias | Global thresholds or review can use test distribution/labels | RESEARCHER DECISION REQUIRED; do not reject/repair by assumption |
 | Baseline correction | Subtract a baseline interval | Baseline interval and applicability are undocumented [UNKNOWN] | May alter amplitudes and cannot be specified from current epoch metadata | Baseline learned/selected across trials can contaminate held-out evaluation | REJECTED as default |
 | Epoch handling | Re-epoch or force 1.5 s/384 samples | Arrays are already trial-shaped with 385 positions [VERIFIED FROM BINARY DATA]; source paper reports 1.5 s [VERIFIED FROM PAPER] | Boundaries and extra sample unresolved; crop would discard data | Boundary selection based on model/test outcomes contaminates evaluation | REJECTED; preserve existing trial boundaries and all positions |
-| Label construction | Use subject group as clinical target; retain `y_stim` separately | Group filenames/counts align with paper; no explicit diagnosis field [STRONGLY SUPPORTED] | Wrong block/order join gives systematic mislabels | Label-informed trial or subject mapping could contaminate evaluation | CONDITIONAL: only after authoritative crosswalk validation |
+| Label construction | Do not construct clinical targets from candidate metadata | Filename prefixes/counts align with paper, but no diagnosis field is keyed to verified participants | Wrong block/order join could create systematic mislabels | Label-informed trial or participant mapping could contaminate evaluation | BLOCKED until an authoritative trial/participant/diagnosis crosswalk is available |
 | Normalization | Per-sample, per-channel, or feature scaling | Paper does not specify it [UNKNOWN]; models may require numerical scaling [INFERENCE] | Can erase biologically meaningful amplitude differences | Global or per-dataset fitted statistics leak held-out information | CONDITIONAL: compare prespecified choices; fit statistics on training subjects only |
 | Spectral features / TBR | Welch/band power or theta/beta ratio | Proposed by project guide; not established as required in paper [UNKNOWN] | PSD/band settings and biomarker interpretation are unspecified | Feature/band selection on full data leaks test information | RESEARCHER DECISION REQUIRED; separate experiment, not mandatory preprocessing |
 | Subject-level split | Keep all trials for a participant in one fold | Multiple trials per participant; 144 participants [VERIFIED FROM BINARY DATA / VERIFIED FROM PAPER] | Only 144 groups; group/class balance may vary | Prevents direct subject overlap if crosswalk is correct | CONDITIONAL: required primary strategy after crosswalk is proven; freeze folds and seed |
@@ -145,7 +154,7 @@ These are candidates to audit, not instructions to execute:
 ## 9. Data leakage audit
 
 - **Trial-level splitting:** Rejected for the primary unseen-participant evaluation. Trials from one child must not cross partitions. [STRONGLY SUPPORTED]
-- **Subject leakage:** The candidate key is `(group block, within-block subject index)`, not row 0 alone. Because EEG-to-metadata ordering and filename-to-index ordering remain unproven, no split may rely on the candidate mapping until corroborated. [INFERENCE / UNKNOWN]
+- **Participant leakage:** The candidate key is `(candidate block, row-0 value)`, not row 0 alone. EEG-to-metadata and filename-to-index ordering remain unproven; this key does not establish participant independence and must not be presented as a verified split group. [UNVERIFIED MAPPING]
 - **Normalization leakage:** Fit means, variances, clipping limits, imputation values, and any other learned transform using training participants only, separately inside each training fold. Do not calculate them once over the whole dataset. [MODEL REQUIREMENT]
 - **Adaptive preprocessing leakage:** ICA, learned filters, artifact thresholds, channel selection, feature selection, and data-driven preprocessing decisions must be fit/selected inside training folds. Any permitted per-trial deterministic operation must be specified before inspecting held-out outcomes. [MODEL REQUIREMENT]
 - **Feature-selection leakage:** Select features/bands/channels only within the training partition and nested validation procedure; the final test set cannot influence the selection. [MODEL REQUIREMENT]

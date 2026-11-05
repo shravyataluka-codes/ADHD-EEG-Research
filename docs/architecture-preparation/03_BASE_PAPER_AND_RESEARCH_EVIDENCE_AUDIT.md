@@ -4,6 +4,15 @@
 
 **Purpose:** Record what the base paper says, what follows directly from those statements, what remains unclear, what our project has independently checked, and what cannot be reproduced exactly from the available evidence. This document is an evidence summary, **not an architecture or implementation proposal**.
 
+> [!WARNING]
+> **Project-provenance correction:** Earlier local-data conclusions in this audit
+> that treated `y_stim` rows 1–3 as known group indicators, or the composite
+> block/index key as sufficient for participant grouping, are superseded by the
+> Sprint 2 evidence reconciliation. The binary one-hot pattern is observed, but
+> its semantics and the EEG-to-metadata / row-0-to-filename correspondences are
+> unverified. Candidate group mappings are not verified diagnoses, and the
+> candidate key does not establish participant-independent evaluation.
+
 **Audience:** A Computer Science student who is new to EEG, signal processing, machine learning, and Transformers.
 
 ## How to read evidence labels
@@ -71,7 +80,7 @@ These findings and their limitations are documented in [`trial_subject_mapping_v
 - The paper does not state a channel-name-to-column mapping. Our local `chan.mat`/EEG count mismatch leaves the exact 56-channel identities unresolved.
 - Physical amplitude units and the electrode reference scheme are not firmly established in the available project evidence. Values that appear consistent with microvolts are not proof of units.
 - The full participant-level inclusion/exclusion protocol and detailed demographics are not provided in the paper's dataset-method description.
-- Earlier project notes sometimes describe rows 1–3 of `y_stim` as stimulus-category indicators. The later direct validation disproves that interpretation for these files: the rows encode the three group blocks. This is a project-data finding, not a paper statement.
+- Earlier project notes assigned semantics to rows 1–3 of `y_stim`. Later inspection established only their binary one-hot structure and alignment with configured ranges; it did not establish whether they encode stimulus categories, diagnoses, or another field.
 
 ## 3. Preprocessing reported by the paper
 
@@ -242,11 +251,11 @@ The first three are uncertainties in the reported experimental protocol, not pro
 Based on the project's mapping report, data-access code, and state audit:
 
 - **Dataset structure:** all 33,902 trials were checked across `d1`–`d7`; each has 385 samples and 56 channels, stored as `float32`. The validation report records no NaN/Inf values.
-- **File order to metadata columns:** sequential `d1`–`d7` order was checked at all six boundaries. The same-subject spatial-variance correlations were reported from 0.9084 to 0.9977, exceeding the different-subject controls in those tests.
-- **Subject runs and group blocks:** `y_stim` contains 144 contiguous subject runs and three group blocks; subject/trial totals match the paper's Methods counts.
-- **Group-indicator rows:** rows 1–3 of `y_stim` are constant one-hot group-block indicators in the local data; they are not varying stimulus conditions.
-- **Subject grouping key:** the project defines unique block/index IDs (`HC_01`…`HC_44`, `ADD_01`…`ADD_52`, `ADHD_01`…`ADHD_48`) for grouping trials by participant.
-- **Filename association caveat:** the ordinal correspondence between each subject index and the original individual filename is not independently demonstrated because the individual source files are unavailable. The composite subject key is still suitable for keeping each contiguous subject run together; the original human name is not required for that purpose.
+- **Candidate file order to metadata columns:** earlier boundary comparisons were selected using the proposed alignment. Their reported correlations (0.9084 to 0.9977) are not an independent trial-order or identity check.
+- **Row runs and filename blocks:** 144 contiguous row-0 runs, filename block sizes, and aggregate counts are structural observations; their correspondence to people and diagnoses is unresolved.
+- **Rows 1–3:** constant one-hot patterns are observed in configured ranges; their semantic meaning is not established.
+- **Candidate participant key:** block/index IDs are unique by construction but do not verify participant identity or support a participant-independent evaluation claim.
+- **Filename association:** row-0-to-filename ordinal correspondence has not been independently demonstrated.
 - **Current code:** the only implemented project module is data access (`TrialManifest` and `EEGTrialStore`). It reads metadata/trials and validates/accesses them; it does not preprocess, split, train, or classify.
 - **Test scope:** the project state audit reports seven passing data-access tests, but says they use synthetic files. These tests check module behavior, not model performance or full processing on real data.
 - **Work not done:** no preprocessing pipeline, model, training loop, or model evaluation has been implemented or run. The current project audit lists preprocessing Gate 2 and later ML gates as not passed.
@@ -257,7 +266,7 @@ For full evidence and scripts, see [`trial_subject_mapping_validation.md`](../tr
 
 The following are **candidate questions already present in project notes**, not choices made by this audit, validated findings, or claims that no prior study has addressed them:
 
-1. **Subject-wise generalization:** Does high reported performance persist when the test subjects are wholly absent from training? The paper's split unit is unspecified; our local subject mapping is now validated sufficiently for subject grouping.
+1. **Subject-wise generalization:** Does high reported performance persist when verified participants are wholly absent from training? The paper's split unit is unspecified, and the local participant mapping is not verified, so this question cannot yet be tested with the candidate key.
 2. **Preprocessing sensitivity:** How much do results depend on choices that the paper does not specify, such as artifact handling, filtering, normalization, or epoch construction?
 3. **Fair baseline comparison:** How do model families compare under the same well-documented participant split and evaluation protocol? The original paper compares CNN baselines, but its split/evaluation details remain unclear.
 4. **Subtype distinction:** How reliably can ADD and ADHD be distinguished from each other, rather than only from controls? Prior literature notes this as a challenge; this is a candidate question, not a confirmed gap unique to our project.
@@ -271,7 +280,7 @@ These topics appear in [`ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md`](../ML_METHOD
 ### Can currently be reproduced or checked from project materials
 
 - The broad task definition, group names/counts, trial totals, sampling rate, duration, and channel count reported by the paper.
-- The local EEG tensor shapes, file concatenation, subject runs, group-block structure, and a deterministic subject grouping key, according to the documented direct inspections.
+- The local EEG tensor shapes, row-0 runs, filename blocks, and one-hot structure, according to documented inspections. Candidate file/participant/diagnosis correspondence remains unresolved.
 - The paper's high-level encoder pipeline and the hyperparameters/results explicitly reported in its tables and text.
 
 ### Cannot currently be reproduced exactly
@@ -305,9 +314,9 @@ These topics appear in [`ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md`](../ML_METHOD
 
 ## C. What we have independently verified
 
-- The local file shapes, trial count, channel count, metadata layout, group-block counts, and contiguous subject runs.
-- The `d1`–`d7` sequential join to `y_stim` through reported boundary signal checks.
-- The mapping from trials to unique project subject-group keys, with original individual filename identity remaining a separate caveat.
+- The local file shapes, trial count, channel count, metadata layout, candidate group-block counts, and contiguous row-0 value runs.
+- The earlier proposed `d1`–`d7` join to `y_stim` was checked using candidate-selected boundary comparisons; this is not independent verification.
+- Candidate block/index keys are unique by construction; their participant identity and trial correspondence remain unverified.
 - The current implemented scope is data access only; the project has not yet implemented preprocessing, a model, training, or evaluation.
 
 ## D. What we cannot safely assume
@@ -323,8 +332,8 @@ These topics appear in [`ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md`](../ML_METHOD
 
 The following are facts and constraints to keep available for a later, separately made design decision:
 
-- The task is three-class classification over 144 subjects but 33,902 highly repeated trials; subjects, not trials, are the independent people represented in the cohort.
-- The local project now has a validated trial-to-subject/group crosswalk, while the original participant filenames are not fully cross-validated.
+- The paper reports a three-group cohort of 144 participants and 33,902 trials; mapping local trials to those participants and their diagnoses remains unresolved.
+- Candidate block/index keys do not establish participant-independent evaluation.
 - The local EEG shape is `(385, 56)`, yet the paper's duration/rate imply a 384-sample expectation; all 385 positions are currently preserved by project policy pending clarification.
 - The channel-name mapping, amplitude units/reference, and exact preprocessing state remain unresolved.
 - The paper's preprocessing description, split unit, evaluation aggregation, and several architecture/result values are insufficiently specified for exact replication.

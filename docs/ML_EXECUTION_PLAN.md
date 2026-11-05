@@ -4,8 +4,17 @@
 > **Document status:** Planning only. No model code, preprocessing code, or training has been performed.
 > No existing research documents were modified to produce this plan.
 >
+> **Provenance correction:** Earlier conclusions in this historical plan that
+> treated row-0 runs or filename blocks as verified participant identities, or
+> treated `y_stim` rows 1–3 as known stimulus/clinical labels, are superseded.
+> Row 0 and filename ordinals are candidate mappings; rows 1–3 have observed
+> one-hot structure but unverified semantics. No verified clinical diagnosis
+> labels or independently verified trial-to-participant join are established.
+> A generic split utility cannot establish participant independence, and no
+> real-data split or training experiment has been performed.
+>
 > **Evidence conventions used throughout:**
-> - `VALIDATED` — established by direct binary-data inspection, cross-referenced metadata, or the base paper.
+> - `VALIDATED` — only a narrow structural observation directly checked in binary data or explicitly reported by a source; it does not imply verified identity, diagnosis, or correspondence.
 > - `STRONGLY SUPPORTED` — multiple independent observations align; not yet independently proven.
 > - `PROPOSED — NOT YET FROZEN` — appears in a teammate roadmap or master guide but lacks validated evidence.
 > - `UNRESOLVED — EVIDENCE REQUIRED` — cannot be established from any currently available source.
@@ -47,30 +56,30 @@
 | d7 shape: `(385, 56, 3902)` | Direct HDF5 header inspection | Binary data — `VALIDATED` |
 | Total trial count: 33,902 | d1–d6 × 5,000 + d7 × 3,902 = 33,902; equals y_stim column count | `VALIDATED` |
 | y_stim shape: `(4, 33902)`, dtype float64 | Direct inspection | `VALIDATED` |
-| y_stim row 0: within-block subject index | Values 1–52, reset per block; 144 contiguous runs, no gaps | `VALIDATED` |
-| y_stim rows 1–3: mutually exclusive binary one-hot | Exactly one active per column; column sums = 10,129 / 13,031 / 10,742 | `VALIDATED` |
+| y_stim row 0: candidate within-block index | Values 1–52, reset per configured range; 144 contiguous runs | Structural observation; participant mapping unverified |
+| y_stim rows 1–3: binary one-hot structure | Exactly one active per column in the reported inspection | Structural observation; semantics and clinical meaning unverified |
 | sub_name_stim.mat: three blocks of 44 / 52 / 48 unique filenames | Direct HDF5 cell-array inspection | `VALIDATED` |
 | Filename tokens: block 1 = `controls`, block 2 = `subtype1`, block 3 = `subtype2` | All filenames in each block share the respective prefix | `VALIDATED` |
 | chan.mat: 60 channel entries with standard labels | Direct inspection (Cz, FCz, Fz, Fp1, Fp2, Oz, Iz, etc.) | `VALIDATED` |
 | Channel count mismatch: chan.mat = 60, EEG arrays = 56 | Direct count comparison | `VALIDATED` |
 | Dataset entirely excluded from Git | `.gitignore` contains `dataset/` | `VALIDATED` |
 | Base paper is He et al. (2023), Journal of Neural Engineering, DOI 10.1088/1741-2552/acf7f5 | Paper confirmed | `VALIDATED` |
-| Paper reports 144 subjects: 44 HC, 52 ADD, 48 ADHD | Paper section 2.1 | `VALIDATED` |
-| Paper reports 33,902 trials; 10,129 HC / 13,031 ADD / 10,742 ADHD | Paper section 2.1 | `VALIDATED` |
+| Paper reports a cohort of 144: 44 HC, 52 ADD, 48 ADHD | Paper section 2.1 | Source-reported; correspondence to candidate metadata blocks unverified |
+| Paper reports 33,902 trials and cohort totals | Paper section 2.1 | Source-reported; not a verified per-trial diagnosis mapping |
 | Paper's Transformer input shape reported as `(None, 385, 56)` | Table 1 | `VALIDATED` |
 | Paper reports ICA as the only stated preprocessing step | Paper section 2.1 | `VALIDATED` |
 | No model code has been implemented | Codebase review | `VALIDATED` |
 | No preprocessing has been executed | Audit conclusion in ADHD_EEG_PREPROCESSING_AUDIT.md | `VALIDATED` |
 
-### B. Completed but Requiring Final Validation
+### B. Historical Hypotheses Requiring Independent Validation
 
 | Item | Current status | What must be confirmed |
 |---|---|---|
-| Trial → file → y_stim column join | `STRONGLY SUPPORTED` by exact count arithmetic | No independent trial-ID or checksum exists in EEG file headers; ordering inference not independently proven |
-| Group label assignment: block 1 = HC, block 2 = ADD, block 3 = ADHD | `STRONGLY SUPPORTED` by filename tokens and matching paper counts | No explicit diagnosis field keyed to each trial exists in the MAT files |
-| sub_name_stim filename ordinal ↔ row-0 index mapping | `STRONGLY SUPPORTED`; assumed linear ordering | Filename ordinal-to-row-0 join not independently proven |
+| Candidate trial → file → y_stim column alignment | Count arithmetic is consistent | No independent trial-ID or checksum exists in EEG file headers; ordering inference not independently proven |
+| Candidate diagnostic-group mapping: filename blocks versus paper cohorts | Provisional alignment of prefixes/counts | No explicit diagnosis field keyed to a verified participant/trial exists in the MAT files |
+| Candidate sub_name_stim filename ordinal ↔ row-0 mapping | Hypothesis consistent with counts/order | Filename ordinal-to-row-0 join not independently proven |
 | Seminal earlier work is Vahid et al. (2019) | Identified in sprint_1_research_landscape.md | Dataset lineage not fully traced through all published papers on this cohort |
-| Paper used trial-level (not subject-level) splitting | `STRONGLY SUPPORTED` by paper description; paper does not state subject-aware splitting | Cannot be proven without the original paper's code |
+| Paper's split unit | Unknown; paper does not state whether folds were participant-aware | Cannot be proven without the original paper's code |
 
 ### C. Unresolved
 
@@ -78,7 +87,7 @@
 |---|---|
 | Physical meaning of the 385th sample (384 = 256 Hz × 1.5 s) | `UNRESOLVED — EVIDENCE REQUIRED` |
 | Exact identities of the 4 channels absent from EEG arrays (chan.mat has 60, arrays have 56) | `UNRESOLVED — EVIDENCE REQUIRED` |
-| Exact physical meanings of y_stim rows 1–3 (stimulus categories, not diagnoses) | `UNRESOLVED — EVIDENCE REQUIRED` |
+| Exact physical meanings of y_stim rows 1–3 | `UNRESOLVED — EVIDENCE REQUIRED`; they are not established clinical targets |
 | Whether downloaded EEG files are already ICA-cleaned or represent raw continuous data | `UNRESOLVED — EVIDENCE REQUIRED` |
 | Whether the file-level trial ordering matches y_stim column ordering | `UNRESOLVED — EVIDENCE REQUIRED` (only inferred from count arithmetic) |
 | Whether sub_name_stim block entries are in same ordinal order as y_stim row-0 indices | `UNRESOLVED — EVIDENCE REQUIRED` |
@@ -101,7 +110,7 @@ The following are proposals from the teammate master guide (`adhd-eeg-transforme
 | Welch PSD spectral band extraction (5 bands) | Master guide | `PROPOSED — NOT YET FROZEN` |
 | Hybrid Spatial-Spectral Conformer architecture | Master guide | `PROPOSED — NOT YET FROZEN` |
 | Depthwise spatial convolution layer | Master guide | `PROPOSED — NOT YET FROZEN` |
-| StratifiedGroupKFold(n_splits=5) subject-level split | Both documents | `PROPOSED — NOT YET FROZEN` (approach is directionally correct; exact parameters not frozen) |
+| StratifiedGroupKFold grouped by candidate keys | Both documents | `PROPOSED — NOT YET FROZEN`; participant-independent interpretation requires verified participant keys |
 | AdamW optimizer with cosine annealing | Master guide | `PROPOSED — NOT YET FROZEN` |
 | MNE-Python preprocessing stack | Master guide | `PROPOSED — NOT YET FROZEN` |
 | Scalp topomap visualization | Master guide | `PROPOSED — NOT YET FROZEN` |
@@ -124,24 +133,23 @@ The following are proposals from the teammate master guide (`adhd-eeg-transforme
          │  PREREQUISITE: Formal validation of the file→y_stim column
          │  join and the sub_name_stim filename→row-0 index join.
          ▼
-[Deterministic Trial → Subject → Clinical Group Mapping]
-  Global trial index | source file | within-file index
-  | subject ID (globally unique composite key) | clinical group
+[Candidate Mapping Diagnostics (No Verified Identity or Diagnosis)]
+  Source-local file/index | candidate participant mapping
+  | candidate diagnostic-group mapping | clinical target unavailable
          │
-         │  PREREQUISITE: Validated mapping with no ambiguity;
-         │  approval of the composite key and label construction rule.
-         │  GATE 1 must pass before this can proceed.
+         │  A verified participant/trial crosswalk and authoritative
+         │  diagnosis records are required before these mappings can be
+         │  treated as identities, labels, or participant split groups.
          ▼
 [Preprocessing Protocol Decision]
   Decide: filter? normalize? handle 385th sample? channel mapping?
          │
-         │  PREREQUISITE: Mapping validated; preprocessing decisions
-         │  documented and frozen BEFORE any code is written.
-         │  GATE 2 must pass before this can proceed.
+         │  Freeze decisions from supported signal evidence. This does not
+         │  authorize attaching unverified identities/labels or real splits.
          ▼
 [Derived Dataset Construction]
-  Preprocessed trials with validated metadata attached;
-  subject-level splits defined; leakage controls documented.
+  Candidate/source-local metadata only unless authoritative mappings exist;
+  verified labels and participant-independent splits remain blocked until then.
          │
          │  PREREQUISITE: Protocol frozen; no test-set information
          │  used in preprocessing or split parameter selection.
@@ -250,7 +258,7 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 
 ### Sprint 1 — Trial → Subject → Clinical Group Mapping Validation
 
-**Objective:** Produce a deterministic, independently verifiable crosswalk from every EEG trial to a globally unique subject identifier and clinical group label. This is GATE 1.
+**Historical objective:** Seek an independently verifiable crosswalk from every EEG trial to a participant identity and verified diagnosis label. Current evidence does not provide it; identity and diagnosis correspondence remain unresolved.
 
 **Prerequisites:** Sprint 0 complete; no preprocessing yet.
 
@@ -263,13 +271,13 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 **Outputs:**
 - `docs/trial_subject_mapping_validation.md` — formal evidence document
 - A reproducible, version-controlled script that derives (but does NOT write out) the mapping for validation purposes only
-- Mapping validation report: verdict of VALIDATED or UNRESOLVED with evidence
+- Mapping evidence report: distinguish structural observations from unresolved identity and diagnosis correspondence
 
 **Implementation tasks:**
 1. Verify that all 7 EEG files have the expected internal variable names, shapes, and dtypes
 2. Formally verify the sequential file-to-column mapping: confirm that d1 trial 1 corresponds to y_stim column 0 (or present evidence that it does not)
 3. Formally verify the sub_name_stim filename ordinal ordering matches row-0 index ordering within each block
-4. Construct the composite subject key: `(block_index, within_block_subject_index)` → `(group_label, filename)`
+4. Describe `(candidate_block_index, candidate_row0_value)` and filename ordinals as candidate mappings; do not treat them as verified identities or labels
 5. Produce per-subject trial counts and verify consistency with dataset-investigation.md totals
 6. Attempt to locate any independent ordering evidence in the EEG file headers or OSF metadata
 
@@ -287,10 +295,8 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 - Are the y_stim rows 1–3 category counts (10,129 / 13,031 / 10,742) the same as the group trial counts — or are they something else (stimulus categories)?
 
 **Acceptance criteria:**
-- The trial → subject → group mapping is either:
-  - FORMALLY VALIDATED: evidence establishes the ordering independently, OR
-  - FORMALLY UNRESOLVED: the limitation is precisely documented and subsequent sprints are blocked until resolved
-- A globally unique composite subject key is proposed and validated
+- The trial → participant → diagnosis correspondence is either independently supported or formally recorded as unresolved
+- A unique-by-construction candidate composite key may be used for structural utilities, but is not a verified participant key
 - The script that derives the mapping is committed and readable
 - The 56 vs. 60 channel discrepancy is documented with any additional evidence found
 
@@ -304,13 +310,13 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 
 **Objective:** Make and document an explicit, evidence-based decision for every preprocessing choice before implementing any transformation. Produce a frozen preprocessing specification. This is GATE 2.
 
-**Prerequisites:** Sprint 1 mapping validated (GATE 1 passed); mapping script committed.
+**Prerequisites:** Sprint 1 structural diagnostics recorded with their limitations. An authoritative participant/trial crosswalk and clinical diagnosis record are not currently established; Sprint 2 preprocessing decisions do not treat the candidate key as verified identity.
 
 **Inputs:**
 - `docs/ADHD_EEG_PREPROCESSING_AUDIT.md` (the current most complete audit)
 - `docs/dataset-preprocessing-audit.md`
 - Literature: Vahid et al. 2019, He et al. 2023
-- Validated mapping from Sprint 1
+- Candidate metadata mappings from Sprint 1, explicitly kept separate from verified participant identities and diagnoses
 
 **Outputs:**
 - `docs/preprocessing_protocol.md` — the frozen preprocessing specification
@@ -320,7 +326,7 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
   - 385-sample handling: preserve or crop, and why
   - Channel handling: retain 56 raw columns; spatial mapping deferred pending 56/60 resolution
   - Normalization: scope and fitting rule
-  - Label construction rule: exact composite key used as target
+  - Label eligibility rule: use only an authoritative clinical diagnosis source linked to verified participant/trial identities; the composite candidate key is never a target
 
 **Implementation tasks:**
 1. Determine the preprocessing state of downloaded files (already ICA-cleaned by OSF source, or raw?)
@@ -358,11 +364,11 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 
 **Objective:** Implement the frozen preprocessing protocol in code. Apply it only to the training data within each fold. Produce a derived dataset with complete audit trail. This is NOT GATE 3 (that is the split strategy); this sprint delivers the pipeline artifact.
 
-**Prerequisites:** Sprint 2 protocol frozen (GATE 2 passed). Split strategy from Sprint 4 must also be available before this can fully execute on all folds; the pipeline code can be written in Sprint 3 and executed after Sprint 4.
+**Prerequisites:** Sprint 2 protocol frozen (GATE 2 passed). A verified participant/trial crosswalk and clinical diagnosis record are required before participant metadata can be treated as verified or any supervised evaluation can run. Split strategy from Sprint 4 must also be available before fold-specific execution.
 
 **Inputs:**
 - `docs/preprocessing_protocol.md` (frozen)
-- Validated mapping from Sprint 1
+- Candidate metadata mappings from Sprint 1; retain their candidate status unless an authoritative crosswalk is obtained
 - Raw EEG files (read-only)
 
 **Outputs:**
@@ -374,7 +380,7 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 1. Implement file-by-file bounded reading (avoid full concatenation in RAM)
 2. Implement trial-shape verification before any transformation (expected: `(385, 56)`)
 3. Implement approved transformations in exact sequence specified in the frozen protocol
-4. Attach validated metadata (subject ID, group label) to each trial
+4. Attach source-local locators and candidate metadata under explicit candidate field names; attach verified identity/diagnosis only from authoritative records
 5. Implement output writing to a separate `data/derived/` directory (never overwriting raw)
 6. Record source file hash, software versions, parameters, and timestamp for every derived output
 
@@ -384,8 +390,8 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 - Finite-value check: no NaN, no Inf in any output trial
 - Sample count: total output trials = 33,902 (no duplications or deletions)
 - Channel count: 56 channels preserved exactly
-- Subject identity: every trial has a validated, unique composite subject key
-- Label integrity: HC=0, ADD=1, ADHD=2 (or team-approved encoding); no trial has an ambiguous label
+- Participant identity: do not claim a validated composite key; verify an authoritative identity crosswalk before any participant-independent evaluation
+- Label integrity: apply HC/ADD/ADHD encoding only after an authoritative clinical diagnosis is linked to each verified participant/trial
 - Leakage check: no test-subject data was accessed during any training-fold processing step
 - Reproducibility: re-running the script with the same seed produces bit-identical output
 - Transformation correctness: every approved step matches the protocol specification
@@ -393,7 +399,7 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 **Audit questions:**
 - Does the output trial count exactly equal 33,902?
 - Does each derived file's hash match what the script recorded?
-- Are there any trials where the composite subject key is ambiguous or missing?
+- Are source-local locators, candidate keys, and any independently verified participant IDs kept distinct? If no authoritative key exists, participant-level eligibility remains blocked.
 
 **Acceptance criteria:**
 - All integrity checks pass
@@ -411,12 +417,12 @@ If a prerequisite cannot be established, the stage must not proceed and the bloc
 
 **Objective:** Define, justify, and freeze the exact train/validation/test split strategy. This is GATE 3. No model trains until this is frozen.
 
-**Prerequisites:** Sprint 1 mapping validated (GATE 1); Sprint 2 protocol frozen (GATE 2).
+**Prerequisites:** Sprint 1 structural diagnostics recorded (not an identity-validation gate); Sprint 2 protocol frozen (GATE 2). A participant-independent strategy cannot be accepted for real-data use until authoritative participant/trial mappings and clinical diagnosis labels are available.
 
 **Inputs:**
-- Validated subject mapping from Sprint 1
-- Subject-level trial counts (highly variable: 46–295 trials/subject)
-- Group counts: 44 HC / 52 ADD / 48 ADHD
+- Candidate participant mappings and run counts from Sprint 1, without verified identity status
+- Candidate run lengths (historically reported as 46–295 trials per row-0 run)
+- Paper-reported cohort counts (44 HC / 52 ADD / 48 ADHD); correspondence to local candidate runs is unverified
 
 **Outputs:**
 - `docs/split_strategy.md` — exact split specification
@@ -710,8 +716,8 @@ Every preprocessing output should eventually pass all of the following checks:
 | Finite values | No NaN or Inf in any trial after any transformation |
 | Sample count | Total output trials = 33,902 |
 | Channel count | 56 channels preserved exactly |
-| Subject identity | Every trial carries a validated, globally unique composite subject key |
-| Label integrity | Every trial carries a validated group label (HC / ADD / ADHD); y_stim rows 1–3 are NOT used as labels |
+| Participant identity | Candidate composite keys are not verified identities; require an authoritative crosswalk before participant-independent claims |
+| Label integrity | No verified clinical target is currently established for every trial; neither candidate blocks nor y_stim rows 1–3 may be treated as labels |
 | Leakage | No test-subject data was accessed during any training-fold transformation |
 | Reproducibility | Identical output produced by re-running with the same seed and software versions |
 | Transformation correctness | Every approved operation matches the frozen protocol specification |
@@ -750,24 +756,22 @@ Axes:   dim 0 = time/sample positions (385 positions, physical meaning UNRESOLVE
 
 | Field | Status | Source |
 |---|---|---|
-| `global_trial_index` | STRONGLY SUPPORTED (sequential file arithmetic) | y_stim column ordering |
+| `candidate_global_index` | Arithmetic convention based on file counts; metadata ordering unverified | Candidate y_stim column ordering |
 | `source_file` | VALIDATED (d1–d7) | file identity |
-| `within_file_trial_index` | STRONGLY SUPPORTED (sequential within each file) | file ordering inference |
-| `block_index` (0, 1, or 2) | VALIDATED (y_stim one-hot rows 1–3 → block) | binary data inspection |
-| `within_block_subject_index` (1-based) | VALIDATED (y_stim row 0 contiguous runs) | binary data inspection |
-| `composite_subject_key` = `(block_index, within_block_subject_index)` | STRONGLY SUPPORTED; requires Sprint 1 validation | proposed in ADHD_EEG_PREPROCESSING_AUDIT.md |
-| `subject_filename` | STRONGLY SUPPORTED (from sub_name_stim) | sub_name_stim ordinal assumed |
-| `clinical_group` = HC / ADD / ADHD | STRONGLY SUPPORTED (filename tokens + paper counts) | Sprint 1 must validate |
-| `y_stim_row1`, `y_stim_row2`, `y_stim_row3` | VALIDATED as binary indicators; physical meaning UNRESOLVED | binary inspection |
+| `within_file_trial_index` | Source-local index convention | Does not establish global trial order or y_stim correspondence |
+| `candidate_block_index` (0, 1, or 2) | Structurally aligned with y_stim rows 1–3 | Does not establish clinical group semantics |
+| `candidate_row0_value` (1-based) | Row-0 contiguous runs observed | Does not establish participant identity |
+| `candidate_participant_key` | Unique by construction | Identity mapping and trial correspondence unresolved |
+| `candidate_filename` | Candidate ordinal mapping | sub_name_stim ordinal correspondence unverified |
+| `candidate_diagnostic_group` | Candidate block/prefix mapping | Not a verified clinical diagnosis |
+| `y_stim_row1`, `y_stim_row2`, `y_stim_row3` | Binary one-hot structure observed | Physical meaning and clinical semantics unresolved |
 
 ### 5.3 Distinction: What y_stim IS and IS NOT
 
-`VALIDATED:` y_stim rows 1–3 are mutually exclusive binary indicators.
-`VALIDATED:` They are NOT the HC / ADD / ADHD diagnostic labels.
-`STRONGLY SUPPORTED:` They represent stimulus/task categories (consistent with "stim" name).
-`UNRESOLVED:` Their exact physical category names (e.g., target, non-target, distractor) are unknown.
+`STRUCTURALLY OBSERVED:` y_stim rows 1–3 are mutually exclusive binary indicators.
+`UNRESOLVED:` Their exact physical meaning is unknown; they are not established HC / ADD / ADHD diagnostic labels.
 
-**Implication for modeling:** The target label for classification must come from the subject-group metadata (block identity), NOT from y_stim rows 1–3.
+**Implication for modeling:** No verified clinical target label can currently be assigned from the available metadata. Do not treat candidate block identity or y_stim rows 1–3 as clinical labels.
 
 ### 5.4 Post-Preprocessing Trial (PROPOSED — NOT YET FROZEN)
 
@@ -921,13 +925,13 @@ The following operations must NOT occur at the current project stage.
 | Running ICA | Unknown processing state of downloaded files; no approved protocol |
 | Cropping 385 → 384 samples | Physical meaning of 385th sample is unresolved; no evidence justifies removal |
 | Random trial-level train/test splitting | Would allow same-subject trials across partitions; explicitly prohibited for the primary evaluation |
-| Using y_stim rows 1–3 as HC/ADD/ADHD labels | These are stimulus indicators, not diagnostic labels — validated distinction |
+| Using y_stim rows 1–3 as HC/ADD/ADHD labels | Their semantic meaning is unverified; they are not established clinical targets |
 | Computing normalization statistics over the full dataset | Normalization must be fitted on training subjects only |
 | Assuming the 56-to-60 channel mapping | Identity of 4 absent channels is unknown; spatial features are blocked |
 | Building topographic / scalp topomap features | Channel spatial mapping is unresolved |
 | Claiming a specific research gap as established | Research gap hypotheses require literature evidence, not just a teammate's proposal |
 | Predicting or reporting expected model accuracy | No performance predictions (e.g., "80–90% accuracy") |
-| Claiming trial-level leakage in the base paper as a confirmed fact | It is strongly supported but the paper's code is unavailable for verification |
+| Claiming trial-level leakage in the base paper as a confirmed fact | The paper's split unit is not established by available evidence; leakage is a concern to investigate, not a confirmed result |
 | Claiming the Hybrid Conformer as the approved architecture | It is a proposal; no architecture decision has been made |
 | Reporting TBR as a validated ADHD biomarker in this dataset | TBR is proposed; not verified in this specific dataset |
 | Starting Sprint N+1 if Sprint N's gate has not passed | The dependency order is mandatory |
@@ -938,15 +942,15 @@ The following operations must NOT occur at the current project stage.
 
 The single next implementation target, given the current state of the repository, is:
 
-### SPRINT 1: Formal Validation of the Trial → Subject → Clinical Group Mapping
+### Historical Sprint 1 Target: Trial and Metadata Correspondence (Unresolved)
 
 **Why this is the correct first target:**
 
-The entire ML pipeline depends on the ability to create leakage-safe subject-level splits. Subject-level splitting requires knowing which trials belong to which subject. That knowledge depends on the trial → y_stim column mapping and the sub_name_stim ordinal mapping. Neither of these has been independently validated — both are "strongly supported" inferences.
+Participant-independent evaluation requires independently verified participant keys and a verified trial-to-key join. The trial → y_stim column and sub_name_stim ordinal mappings remain unverified candidate mappings.
 
 Before preprocessing, before splitting, before any model code, before any normalization, the research team must answer:
 
-> *"Can we produce a formal, defensible, independently-verified mapping from every EEG trial in d1.mat–d7.mat to a globally unique subject identifier and clinical group label?"*
+> *"Can we produce an independently verified mapping from every EEG trial to a participant identity and verified clinical diagnosis label?"*
 
 **If the answer is YES** (with documented evidence):
 - GATE 1 is passed
@@ -995,7 +999,7 @@ This is the correct first implementation target.
 
 4. **The master guide (`adhd-eeg-transformer-master-guide.md`) is a teammate proposal, not a validated protocol.** Every preprocessing step in it (0.5–45 Hz filter, notch, ICA, TBR, spectral bands, Conformer architecture) is explicitly `PROPOSED — NOT YET FROZEN`.
 
-5. **y_stim rows 1–3 are stimulus category indicators, not HC/ADD/ADHD labels.** Using them as diagnostic targets would be a critical error.
+5. **The semantics of y_stim rows 1–3 remain unresolved.** They are not verified clinical labels and must not be used as diagnostic targets.
 
 6. **The 385-sample discrepancy is unresolved.** The 385th position must be preserved until evidence establishes its meaning.
 
@@ -1010,7 +1014,7 @@ This is the correct first implementation target.
 3. Are the downloaded EEG files already ICA-cleaned, or are they raw? (GATE 2)
 4. What is the physical meaning of the 385th sample? (GATE 2)
 5. Which 4 channels are absent between chan.mat (60) and EEG arrays (56)? (blocks spatial features)
-6. What are the physical meanings of y_stim rows 1–3 categories? (affects experimental design interpretation)
+6. What are the physical meanings of y_stim rows 1–3? (affects experimental design interpretation; not established as clinical labels)
 7. Was the base paper's splitting performed at trial level or subject level? (affects interpretation of our results vs. theirs)
 8. What exact preprocessing does the paper report that was applied before OSF publication? (GATE 2)
 
@@ -1031,9 +1035,9 @@ Sprint 9: Explainability and Research Analysis [GATE 7]
 
 ### First Implementation Target
 
-> **Sprint 1: Formal validation of the trial → subject → clinical group mapping.**
+> **Historical Sprint 1 target: verify trial, participant, and diagnosis correspondence.**
 >
-> Deliverable: `docs/trial_subject_mapping_validation.md` with a formal verdict of VALIDATED or UNRESOLVED.
+> Deliverable: `docs/trial_subject_mapping_validation.md` with the current status recorded as UNRESOLVED for identity and diagnosis correspondence.
 > Deliverable: A committed inspection script that derives and documents the mapping.
 >
 > No preprocessing code, model code, or training should begin until this sprint is complete and its acceptance criteria are met.

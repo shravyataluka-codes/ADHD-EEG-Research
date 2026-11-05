@@ -5,6 +5,15 @@
 **Audience:** CS student with basic programming knowledge (Java / C / Python / DSA), new to EEG, ML, and Transformers.  
 **Scope:** What exists RIGHT NOW. No architecture decisions. No implementation decisions.
 
+> [!WARNING]
+> **Provenance correction:** The Sprint 1 mapping conclusions and Gate 1 “PASSED”
+> status recorded below are historical and superseded by the later Sprint 2
+> evidence reconciliation. Row-0 runs, filename blocks, and one-hot rows 1–3 are
+> structural observations and candidate mappings; they do not independently
+> verify EEG-to-metadata correspondence, participant identity, or clinical
+> diagnosis. Rows 1–3 have unverified semantics. Participant-independent
+> evaluation is not established by the candidate composite key.
+
 ---
 
 ## Quick Orientation — Key Terms Used in This Document
@@ -86,38 +95,40 @@ These things are confirmed by either direct file inspection, running code, or ex
 - The 7 EEG files are physically one continuous recording split into chunks to comply with a 5 GB file-size limit on OSF (the storage platform). The OSF readme explicitly states this.
 - File creation timestamps in the binary headers confirm `d1` through `d7` were written **sequentially** within a 2-minute window on March 15, 2019.
 - `y_stim.mat` contains a matrix of shape **(4 rows × 33,902 columns)** in `float64` format.
-  - Row 0: subject index numbers (integers 1–44, 1–52, 1–48 — one block per group).
-  - Rows 1–3: one-hot group indicators (**not stimulus categories** — an earlier misconception was resolved during Sprint 1; see below).
-- `sub_name_stim.mat`: 144 subject filenames, alphabetically sorted within three blocks of 44, 52, and 48 filenames each.
+  - Row 0: integer values in contiguous candidate ranges 1–44, 1–52, and 1–48.
+  - Rows 1–3: one-hot binary patterns aligned to configured ranges; semantics are unverified.
+- `sub_name_stim.mat`: 144 filename entries, alphabetically sorted within three blocks of 44, 52, and 48 entries each; participant correspondence is unverified.
 - `chan.mat`: 60 channel-metadata entries (name, coordinates). **Mismatch with EEG arrays which have 56 channels** — 4 are absent; identities unknown.
 
-### 1.2 Trial-to-Subject-to-Group Mapping — GATE 1 PASSED (Sprint 1 Complete)
+### 1.2 Historical Trial-to-Subject-to-Group Mapping Conclusion — Superseded
 
 This was the most critical open question before any ML work could begin.
 
-**The question:** Can we reliably say "trial #5,137 belongs to subject ADD_02"?
+**The historical question:** Can we reliably say "trial #5,137 belongs to subject ADD_02"?
 
-**The answer (from Sprint 1 validation):** **Yes — with one minor remaining caveat.**
+**Historical Sprint 1 answer:** **Yes — with one minor remaining caveat.** This conclusion is withdrawn; the current evidence does not establish a participant or clinical-label crosswalk.
 
-Evidence collected:
-- The sequential file ordering (`d1` → `d7`) was confirmed by **empirical signal tests**: at every file boundary, the same person's EEG signal appears on both sides (correlation r >= 0.90), while a different person's signal gives low correlation (r < 0.57). This was tested at all 6 file boundaries.
-- The 144 subject runs in `y_stim` row 0 are perfectly contiguous — no gaps, no duplicates.
-- Subject-to-group assignment (which block = HC / ADD / ADHD) matches the paper's numbers exactly.
-- A safe, unique subject ID was established: `HC_01` through `HC_44`, `ADD_01` through `ADD_52`, `ADHD_01` through `ADHD_48`.
+Historical observations:
+- Earlier boundary correlations were calculated using slices selected from the proposed alignment; they do not independently verify ordering or identity.
+- The 144 row-0 value runs are structurally contiguous, with no gaps or duplicate run values.
+- Candidate block counts align with paper-reported cohort counts.
+- A unique-by-construction block/index key was proposed; it is not a verified participant ID or established split group.
 
-**Minor remaining caveat:** The link between a subject's ID number and their specific filename in `sub_name_stim.mat` is "strongly supported" but not independently proven (the original individual files are not on OSF). This does **not** affect safety of machine learning evaluation.
+**Current limitation:** The EEG-to-`y_stim` join, row-0-to-filename correspondence, participant identities, and diagnosis mapping remain unverified. The candidate key therefore does not establish safety of participant-independent evaluation.
 
 > [!NOTE]
-> **Also resolved in Sprint 1:** `y_stim` rows 1–3 were previously suspected to be stimulus category indicators. Direct inspection proved they are actually the three group block indicators (HC / ADD / ADHD), one-hot encoded. So rows 1–3 carry the same information as knowing which group the subject belongs to — they are not separate stimulus types.
+> The historical report interpreted rows 1–3 as group indicators. Direct inspection
+> establishes their one-hot pattern and alignment with configured ranges only;
+> their semantics are not verified. Do not treat these rows as clinical labels.
 
 ### 1.3 Implemented Code — `src/adhd_eeg/data_access.py`
 
 This is the **only Python source code module** in the project. It has two main classes:
 
-**`TrialManifest`** — Reads the metadata (not the EEG) and provides a lookup table.
+**`TrialManifest`** — Reads the metadata (not the EEG) and provides a lookup table. The mappings below are candidates, not verified participant identities or clinical diagnoses.
 - Loads `y_stim.mat` (metadata only — never reads EEG data).
-- Produces metadata for any trial: which file it's in, which subject it belongs to, which group.
-- Can iterate over all trials, or filter by subject ID or group.
+- Produces source-local file/index metadata and candidate participant/group mappings for each trial.
+- Can iterate over all trials, or filter by candidate participant mapping or candidate diagnostic-group mapping.
 - Can export the metadata table as a CSV file.
 
 **`EEGTrialStore`** — Reads actual EEG data safely.
@@ -144,8 +155,8 @@ This is the **only Python source code module** in the project. It has two main c
 | Test name | What it checks |
 |---|---|
 | `test_trial_retrieval_shape_and_dtype` | Reading a single trial returns shape `(385, 56)` in `float32`. |
-| `test_file_boundary_indices_and_metadata_alignment` | Trials at file boundaries map to the correct file and within-file index. Metadata (subject ID, group) is correct. |
-| `test_subject_and_group_lookup` | Filtering by subject ID and by group returns the correct trials. |
+| `test_file_boundary_indices_and_metadata_alignment` | Trials at file boundaries map to source-local file and within-file index. Metadata follows the candidate mappings; this does not verify identity or diagnosis. |
+| `test_subject_and_group_lookup` | Filtering by the candidate participant and diagnostic-group mappings returns the expected trials. |
 | `test_batches_are_bounded_and_preserve_request_order` | Batch reading respects the batch size limit and preserves order. |
 | `test_manifest_csv_contains_metadata_only` | CSV export contains metadata fields, no EEG values. |
 | `test_source_files_are_unchanged_and_returned_trials_are_detached` | Modifying the returned array does not alter the source file (confirmed by SHA-256 hash). |
@@ -159,10 +170,10 @@ All tests use **synthetic data** (fake EEG files created in a temporary folder) 
 
 These things are confirmed to be true, but **no code has been written** to use them in the ML pipeline yet.
 
-- **Subject-level split is required**: All 144 subjects are identified. Keeping each subject's trials together in one partition is a confirmed requirement. The exact method (which subjects go into which fold, how many folds, what random seed) is NOT yet decided.
+- **Participant-independent split is a research requirement, not currently enabled by verified keys**: candidate participant mappings are insufficient to establish grouping by person. The split design remains blocked pending an independently verified participant crosswalk.
 - **Class imbalance exists**: Trials per subject range from 46 to 295. ADD subjects have more trials on average (250.6 +/- 31) than HC (230.2 +/- 56.6) or ADHD (223.8 +/- 57.3). How to handle this imbalance is not yet decided.
-- **y_stim rows 1–3 identity** was resolved during Sprint 1 (they are group block indicators, not stimulus categories). But the code has not been updated to *use* them differently — they are still just metadata.
-- **Gate 1 (mapping)** passed — but no ML pipeline exists yet that *consumes* this mapping.
+- **y_stim rows 1–3** have observed one-hot structure; semantic interpretation remains unresolved.
+- **Gate 1 mapping status:** the historical “passed” status is superseded; participant and diagnosis correspondence remain unresolved.
 
 ---
 
@@ -202,7 +213,7 @@ These questions have not been answered and must be resolved (or explicitly defer
 | **EEG amplitude units and reference** | The values in the data are floating-point numbers. They are likely in microvolts (based on the value ranges), but this is not officially established. The reference electrode (where "zero" is defined) is also unknown. |
 | **ICA state of the downloaded files** | The paper says ICA was applied before releasing the data. But it is not confirmed whether the OSF files are already ICA-cleaned or are still raw. This matters if anyone considers running ICA again. |
 | **Whether trials overlap** | Were the 1.5-second windows extracted with any overlap between consecutive trials? Unknown. |
-| **Exact physical meaning of y_stim rows 1–3** | Confirmed to be group block indicators, but the naming ("stim" = stimulus) still creates ambiguity. Using them directly as ML labels is not approved — labels must come from the block identity. |
+| **Exact physical meaning of y_stim rows 1–3** | One-hot structure is observed; semantics and clinical meaning are unverified. Neither these rows nor candidate block position is an established clinical target. |
 | **The paper's internal inconsistencies** | The base paper (He et al. 2023) contains at least 10 internal inconsistencies (e.g., 144 subjects in one place, 300 in another; parameter count conflicts). These are unresolved. |
 
 ### ML / evaluation unknowns
@@ -228,9 +239,9 @@ These items have been formally decided and must not be changed without documente
 | **Preserve all 56 channel columns** | Do not drop or reorder channels. Channel identities are unknown; no spatial assumptions are allowed. |
 | **Keep data as float32** | Do not silently convert to another number format. |
 | **Do not touch the source files** | `d1.mat` through `d7.mat` are read-only raw data. No code may write to or overwrite them. |
-| **Subject is the split unit** | All trials from one person must go into the same partition. Trial-level splitting is explicitly prohibited. |
+| **Participant-independent evaluation** | Required for claims about unseen participants, but cannot be implemented from unverified candidate keys. Trial-level splitting would not satisfy this requirement. |
 | **No preprocessing without explicit approval** | Filtering, ICA, normalization, baseline correction, artifact rejection, and spectral features are all currently DEFERRED. None may be implemented until a documented research decision with evidence and parameters is made. |
-| **Do not use y_stim rows 1–3 as classification labels** | The block identity (HC / ADD / ADHD) must be derived from the block position (0, 1, or 2), not from y_stim rows 1–3 directly. |
+| **Do not use candidate metadata as verified clinical labels** | Neither `y_stim` rows 1–3 nor candidate block position establishes a clinical diagnosis label. |
 | **No normalization over the full dataset** | If normalization is ever approved, statistics (mean, standard deviation, etc.) may only be calculated from training data — never from the full dataset before splitting. |
 | **The base paper's architecture is not automatically adopted** | The Transformer architecture from He et al. (2023) is a reference, not an automatic choice. Any architecture must be justified. |
 | **No performance predictions** | Statements like "we expect 80–90% accuracy" are explicitly prohibited. |
@@ -240,7 +251,7 @@ These items have been formally decided and must not be changed without documente
 
 | Gate | Status | What it unlocks |
 |---|---|---|
-| Gate 1 — Trial/subject/group mapping | **PASSED** | Preprocessing decisions can now begin |
+| Gate 1 — Trial/subject/group mapping | **HISTORICALLY MARKED PASSED; SUPERSEDED / UNRESOLVED** | Participant and diagnosis correspondence are not established; no downstream evaluation split is authorized on these candidate mappings |
 | Gate 2 — Preprocessing protocol frozen | **NOT PASSED** | Preprocessing code, all downstream steps |
 | Gate 3 — Split strategy frozen | **NOT PASSED** | Model training, evaluation |
 | Gate 4 — Baselines evaluated | **NOT PASSED** | Claiming any benefit from Transformer |
@@ -279,7 +290,7 @@ ADHD-EEG-Research/
 ├── docs/
 │   ├── architecture-preparation/
 │   │   └── 01_PROJECT_STATE_AUDIT.md  <- This document
-│   ├── trial_subject_mapping_validation.md   <- Sprint 1 report (Gate 1 passed)
+│   ├── trial_subject_mapping_validation.md   <- Historical Sprint 1 report (Gate 1 verdict superseded)
 │   ├── SPRINT_2_PREPROCESSING_AND_DATA_CONTRACT.md   <- Gate 2 status: NOT PASSED
 │   ├── SPRINT_2_DECISION_ANALYSIS.md
 │   ├── ML_EXECUTION_PLAN.md        <- Full sprint plan (Sprint 0 output)
@@ -301,13 +312,13 @@ ADHD-EEG-Research/
 
 ## A. What We Definitely Know
 
-1. The dataset has **33,902 trials** from **144 subjects** (44 HC, 52 ADD, 48 ADHD).
+1. The paper reports **33,902 trials** and a cohort of **144 participants** (44 HC, 52 ADD, 48 ADHD); mapping those reports to local trials is unresolved.
 2. Every trial is a **2D array of shape (385, 56)** — 385 time steps × 56 channels — stored as `float32`.
 3. All data files are present locally, intact, and contain zero missing values.
 4. The dataset was split across 7 files only because of a storage size limit; they are one continuous dataset.
-5. Every trial can be traced to a specific subject and group using the mapping: `HC_01 – HC_44`, `ADD_01 – ADD_52`, `ADHD_01 – ADHD_48`.
-6. The mapping was validated by empirical signal-correlation tests at all 6 file boundaries (Gate 1 passed).
-7. `y_stim` rows 1–3 are group block indicators (not stimulus categories). Clinical labels must come from block position, not rows 1–3 directly.
+5. Candidate row-0 runs and filename blocks are structurally observed, but do not verify participant identity or clinical diagnosis.
+6. Boundary correlations were selected using the candidate alignment and do not independently validate the EEG-to-metadata join; Gate 1 remains unresolved.
+7. `y_stim` rows 1–3 have observed one-hot structure; their semantics are unresolved and they are not verified clinical labels.
 8. Trial counts per subject range from **46 to 295**. This imbalance must be handled in ML evaluation.
 9. `chan.mat` has 60 channel entries; EEG arrays have 56 columns. The 4 missing channels are unknown.
 10. The base paper (He et al. 2023) uses a Transformer with input shape `(385, 56)`, but contains at least 10 internal inconsistencies that are unresolved.
@@ -322,7 +333,7 @@ ADHD-EEG-Research/
 2. **`TrialManifest`**: reads subject/group metadata from `y_stim.mat`; can look up, iterate, and filter metadata by subject or group; can export to CSV. Does not read EEG samples.
 3. **`EEGTrialStore`**: reads individual trials and batches from the raw `.mat` files; validates shapes and types; never modifies source files; returns copies.
 4. **7 automated tests**, all passing, covering: trial reading, boundary correctness, subject/group lookup, batch iteration, CSV export, file immutability, and input validation.
-5. **One Sprint 1 validation script** (`validate_trial_subject_mapping.py`) and its formal report — this is what passed Gate 1.
+5. **One Sprint 1 candidate-mapping diagnostics script** (`validate_trial_subject_mapping.py`) and a historical report whose original Gate 1 verdict is superseded.
 
 That is everything. There is no preprocessing code. There is no model code. There is no training code. There is no evaluation code.
 

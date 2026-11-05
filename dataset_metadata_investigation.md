@@ -1,6 +1,16 @@
-# Dataset Metadata Investigation Report
+# Historical Dataset Metadata Investigation Report
 
-Based on an independent script-based inspection of the raw `.mat` files using Python (`h5py` and `scipy.io`), here is the factual investigation report of the dataset's metadata.
+> [!WARNING]
+> **Historical initial interpretation; identity and diagnosis conclusions below
+> are superseded.** The inspected arrays show shapes, counts, row-0 value runs,
+> filename prefixes, and one-hot patterns. They do not independently verify the
+> trial-to-column or row-0-to-filename correspondence. Row 0 is a candidate
+> within-block index, filename blocks are candidate participant mappings, and
+> rows 1–3 have unverified semantics. None of these is a verified participant
+> identity or clinical diagnosis label. Do not use `y_stim` rows 1–3 as clinical
+> targets.
+
+This historical report records observations from an earlier script-based inspection of the raw `.mat` files using Python (`h5py` and `scipy.io`); inferred correspondence and semantics are not verified.
 
 ### 1. `sub_name_stim.mat`
 - **File Format:** MATLAB v7.3 (HDF5-based).
@@ -8,13 +18,13 @@ Based on an independent script-based inspection of the raw `.mat` files using Py
 - **Shape/Dimensions:** The top-level array shape is `(1, 3)`. The inner arrays have lengths of `(1, 44)`, `(1, 52)`, and `(1, 48)`.
 - **Data Types:** HDF5 Object References pointing to 16-bit character arrays (strings).
 - **What Each Dimension Represents:**
-  - **Dimension 1 (Length 3):** Represents 3 distinct subject groups.
-  - **Dimension 2:** Represents individual strings containing the original file names for the subjects in that group.
-- **Unique Values and Subject/Group Information:** 
+  - **Dimension 1 (Length 3):** Contains 3 filename blocks.
+  - **Dimension 2:** Contains filename strings. Their mapping to verified participants is not established.
+- **Observed Values by Candidate Range:**
   - **Group 1:** Contains 44 filenames. All filenames begin with the prefix `'controls'` (e.g., `'controls2MSCT_Time_Estimation_NF_VP_02C.mat'`).
   - **Group 2:** Contains 52 filenames. All filenames begin with the prefix `'subtype1'` (e.g., `'subtype1AB237_NF_pr.mat'`).
   - **Group 3:** Contains 48 filenames. All filenames begin with the prefix `'subtype2'` (e.g., `'subtype2AE231_ET_pr.mat'`).
-  - Total verified subjects across all groups: **144**.
+  - Total filename entries across the three blocks: **144** (not 144 verified identities).
 
 ### 2. `y_stim.mat`
 - **File Format:** MATLAB v7.3 (HDF5-based).
@@ -24,13 +34,13 @@ Based on an independent script-based inspection of the raw `.mat` files using Py
 - **What Each Dimension Represents:**
   - **Columns (33,902):** Correspond to individual observations/events—almost certainly EEG trials or epochs.
   - **Rows (4):** Contain metadata for each trial. 
-    - **Row 0:** Contains integer values ranging from 1.0 to 52.0. This represents a 1-based **subject index** relative to the subject's group.
+    - **Row 0:** Contains integer values ranging from 1.0 to 52.0, organized into contiguous runs. These are candidate within-block indices; participant identity is unverified.
     - **Rows 1, 2, 3:** Contain strictly binary values (`0.0` or `1.0`).
 - **Unique Values and Group Info:** 
   - An analysis of Rows 1-3 reveals exactly three mutually exclusive combinations (one-hot encoding):
-    - `[1, 0, 0]` appears in **10,129** trials. The associated Row 0 values range from 1 to 44 (exactly matching the 44 subjects in Group 1).
-    - `[0, 1, 0]` appears in **13,031** trials. The associated Row 0 values range from 1 to 52 (exactly matching the 52 subjects in Group 2).
-    - `[0, 0, 1]` appears in **10,742** trials. The associated Row 0 values range from 1 to 48 (exactly matching the 48 subjects in Group 3).
+    - `[1, 0, 0]` appears in **10,129** columns. The associated Row 0 values range from 1 to 44, matching the size of candidate filename block 1.
+    - `[0, 1, 0]` appears in **13,031** columns. The associated Row 0 values range from 1 to 52, matching the size of candidate filename block 2.
+    - `[0, 0, 1]` appears in **10,742** columns. The associated Row 0 values range from 1 to 48, matching the size of candidate filename block 3.
 
 ### 3. `chan.mat`
 - **File Format:** MATLAB v5.
@@ -41,13 +51,13 @@ Based on an independent script-based inspection of the raw `.mat` files using Py
 
 ---
 
-### Verified Relationships Between the Files
-- `sub_name_stim.mat` and `y_stim.mat` are inextricably linked. The one-hot encoded rows (Rows 1-3) in `y_stim.mat` perfectly map to the 3 cell arrays in `sub_name_stim.mat`.
-- The values in `y_stim.mat` Row 0 act as array indices (1-based) pointing to the specific filename stored in `sub_name_stim.mat`. To determine which subject a trial belongs to, you look at which row (1-3) is active to determine the group, and then use Row 0 to index into that group's filename array.
+### Candidate Relationships Between the Files (Not Independently Verified)
+- The one-hot patterns in `y_stim.mat` rows 1–3 align structurally with three configured ranges whose counts match the three filename blocks. This does not establish that the rows encode diagnosis or prove a trial-to-file join.
+- The hypothesis that row-0 values index filename entries in `sub_name_stim.mat` is a candidate mapping only. The available metadata does not independently verify which participant, if any, each row/run represents.
 
-### Strongly Supported Interpretations
-- **Groups:** Based solely on the strings inside `sub_name_stim.mat`, the three groups represent "Controls", "Subtype 1", and "Subtype 2".
-- **Labels:** The dataset labels are structured at the *group* level rather than the *stimulus* level. The target variable `y` designates which clinical group the trial originated from.
+### Candidate Interpretations; Semantics Unresolved
+- **Filename blocks:** Prefixes are `controls`, `subtype1`, and `subtype2`; mapping these to participant diagnoses remains unverified.
+- **Rows 1–3:** Their binary one-hot structure and alignment with configured ranges are observable; whether they are stimulus categories, diagnostic labels, or other metadata is unknown. They are not verified clinical targets.
 
 ### Unresolved Questions & Needed Evidence
 1. **Stimulus/Task Information:** Despite the word "stim" appearing in both `y_stim.mat` and `sub_name_stim.mat`, there is **no data** in these files indicating what stimulus was presented during the 33,902 trials, nor the behavioral responses.

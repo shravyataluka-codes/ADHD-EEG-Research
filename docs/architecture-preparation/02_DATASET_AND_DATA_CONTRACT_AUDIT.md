@@ -5,6 +5,17 @@
 **Audience:** CS student with basic programming knowledge, new to EEG, neuroscience, signal processing, and machine learning.
 **Scope:** Data facts only. No preprocessing design. No architecture design. No model representations.
 
+> [!WARNING]
+> **Provenance correction (supersedes earlier conclusions in this historical audit):**
+> This document's earlier labels of a verified subject key, clinical group labels,
+> and leak-free evaluation are not supported. `y_stim` row 0 supplies candidate
+> within-block indices; `sub_name_stim` supplies candidate filename mappings;
+> rows 1–3 are observed binary one-hot patterns whose clinical meaning is
+> unverified. The trial-to-column and filename correspondence is not independently
+> established. These mappings are not verified participant identities or clinical
+> diagnosis labels, and the generic grouping key alone cannot establish
+> participant-independent evaluation.
+
 ---
 
 ## How to Read This Document
@@ -58,21 +69,23 @@ If something is UNKNOWN, it is left UNKNOWN. It is not silently treated as known
 
 ## 2. Number of Subjects
 
-**VERIFIED** — There are **144 subjects** in total.
+**REPORTED / OBSERVED** — The paper reports 144 children; `sub_name_stim.mat`
+contains 144 filename entries and `y_stim` row 0 has 144 contiguous value runs.
+Those counts do not establish that the entries map to 144 verified identities.
 
 Evidence chain:
 1. The base paper (He et al. 2023, Section 2.1) explicitly reports 144 children.
 2. `sub_name_stim.mat` was inspected directly. It contains three blocks of filename strings with lengths 44, 52, and 48. 44 + 52 + 48 = 144.
-3. `y_stim.mat` row 0 contains exactly 144 contiguous subject-index runs spanning all 33,902 columns — no gaps, no duplicates.
+3. `y_stim.mat` row 0 contains exactly 144 contiguous candidate index runs spanning the metadata columns — no gaps or duplicate run indices.
 
 > [!NOTE]
-> The base paper also contains at least one internal inconsistency (mentioning "300 subjects" in a different section). That number is **UNKNOWN** in origin and must not be used. The verified subject count from binary file inspection and the paper's own participant section is 144.
+> The base paper also contains at least one internal inconsistency (mentioning "300 subjects" in a different section). That number is **UNKNOWN** in origin. The reported cohort and observed filename/run counts align at 144, but identity correspondence is not verified.
 
 ---
 
 ## 3. Target Groups (Clinical Labels)
 
-**VERIFIED** — There are three clinical groups:
+**REPORTED, NOT VERIFIED AGAINST PARTICIPANT IDENTITIES** — The paper reports three clinical groups and counts:
 
 | Group | Label | Subjects | Trials |
 |---|---|---|---|
@@ -82,10 +95,10 @@ Evidence chain:
 | **Total** | — | **144** | **33,902** |
 
 Evidence:
-- **VERIFIED** — These exact counts appear in He et al. (2023), Section 2.1.
+- **VERIFIED AS PAPER-REPORTED** — These exact counts appear in He et al. (2023), Section 2.1; their mapping to local trial identities is not verified.
 - **VERIFIED** — `sub_name_stim.mat` contains three blocks with 44, 52, and 48 filenames whose prefixes are `controls`, `subtype1`, and `subtype2` respectively.
-- **VERIFIED** — `y_stim.mat` row 0 partitions into exactly three index runs (1–44, 1–52, 1–48) whose trial totals are 10,129, 13,031, and 10,742 — an exact match to the paper's published counts.
-- **STRONGLY SUPPORTED** — `controls` → HC, `subtype1` → ADD, `subtype2` → ADHD, confirmed by filename tokens and exact count alignment with paper.
+- **OBSERVED STRUCTURE** — `y_stim.mat` row 0 partitions into three candidate index ranges (1–44, 1–52, 1–48), with corresponding trial totals matching the paper's published counts.
+- **CANDIDATE GROUP MAPPING** — `controls` / `subtype1` / `subtype2` filename prefixes align with the paper's reported cohorts and counts. This does not verify each participant's diagnosis or the trial-to-filename join.
 
 ---
 
@@ -120,14 +133,14 @@ How this was confirmed:
 | `d6.mat` | 402,722,744 | (385, 56, 5000) | EEG trials 25,001–30,000 |
 | `d7.mat` | 314,191,152 | (385, 56, 3902) | EEG trials 30,001–33,902 |
 
-Shapes are **VERIFIED** from direct binary (HDF5) inspection. File orderings are **VERIFIED** — see Section 11.
+Shapes are structurally observed from direct binary (HDF5) inspection. File-to-metadata ordering is not independently verified; see Section 18.
 
 ### Metadata Files (information about the trials and subjects)
 
 | File | Size (bytes) | Shape | Role |
 |---|---:|---|---|
-| `y_stim.mat` | 1,153,360 | (4, 33902) | Per-trial metadata: subject index and group identity |
-| `sub_name_stim.mat` | 70,128 | (1, 3) → inner blocks 44/52/48 | Subject filename strings, one per subject |
+| `y_stim.mat` | 1,153,360 | (4, 33902) | Per-column metadata with candidate row-0 values and one-hot fields of unresolved semantics |
+| `sub_name_stim.mat` | 70,128 | (1, 3) → inner blocks 44/52/48 | Filename strings in candidate blocks; participant correspondence unverified |
 | `chan.mat` | 3,135 | (1, 60) | Channel names and spatial coordinates |
 
 All sizes and shapes are **VERIFIED**.
@@ -317,15 +330,15 @@ Summary statistics:
 > [!IMPORTANT]
 > Trial counts vary dramatically — from 46 to 295. This means some subjects contribute 6× more training examples than others. Any ML evaluation that ignores this imbalance will be biased toward high-trial subjects.
 
-**VERIFIED** — The safe, unique subject key for ML splitting is the composite identifier: `{group}_{within-block-index:02d}`, yielding `HC_01` through `HC_44`, `ADD_01` through `ADD_52`, `ADHD_01` through `ADHD_48`. This key is 100% unique across all 144 subjects and guarantees no trial from the same person crosses partition boundaries.
+**CANDIDATE KEY ONLY** — `{candidate_group}_{within-block-index:02d}` can uniquely encode the configured block and row-0 index (for example `candidate_block_1_01`). Uniqueness is a property of the constructed key, not evidence that it represents a verified person. A split grouped by this key cannot establish participant independence unless the underlying trial mapping is independently verified.
 
 ---
 
-## 13. Relationship Between Subjects and Clinical Groups
+## 13. Candidate Mapping Between Row-0 Runs and Filename Blocks
 
-**STRONGLY SUPPORTED** → borders on VERIFIED through count alignment.
+**PROVISIONAL CANDIDATE MAPPING** — correspondence remains unverified.
 
-The three blocks in `y_stim` and `sub_name_stim` correspond to the three clinical groups. Evidence:
+The three blocks in `y_stim` and `sub_name_stim` have matching counts and filename-prefix patterns. This is evidence for a candidate mapping, not proof of clinical diagnosis or per-participant identity.
 
 1. **VERIFIED** — `sub_name_stim.mat` Block 0 contains 44 filenames all beginning with `controls`.
 2. **VERIFIED** — `sub_name_stim.mat` Block 1 contains 52 filenames all beginning with `subtype1`.
@@ -347,33 +360,31 @@ Each column corresponds to one trial. The four rows carry the following informat
 
 ### Row 0 — Subject Index Within Block
 
-**VERIFIED** — Row 0 contains the within-block subject index for each trial.
+**OBSERVED** — Row 0 contains repeated integer values in contiguous runs, proposed as candidate within-block indices.
 
 - Values are integers (stored as float64): 1, 2, 3, …
-- They reset to 1 at the start of each new clinical group block.
-- For Block 0 (HC): values run 1 through 44.
-- For Block 1 (ADD): values run 1 through 52.
-- For Block 2 (ADHD): values run 1 through 48.
-- Row 0 alone is NOT a unique subject identifier. Subject index 3 appears in HC, ADD, and ADHD. You must always combine the row-0 value with the block identity to get a unique subject.
+- They reset to 1 at the start of each configured candidate block.
+- The candidate ranges contain values 1 through 44, 1 through 52, and 1 through 48.
+- Row 0 alone is not a unique identifier; combining it with a block creates a unique candidate key, not a verified participant identity.
 
-### Rows 1, 2, 3 — Clinical Group Block Indicators
+### Rows 1, 2, 3 — Observed One-Hot Patterns (Semantics Unverified)
 
-**VERIFIED** — Rows 1–3 form a one-hot encoding of the clinical group.
+**OBSERVED STRUCTURE** — Rows 1–3 are binary and one-hot in the inspected matrix, with patterns constant within the configured ranges. Their semantic meaning is not independently established.
 
 Direct inspection of all 33,902 columns found:
-- For every trial in Block 0 (HC): rows 1–3 are exactly [1, 0, 0].
-- For every trial in Block 1 (ADD): rows 1–3 are exactly [0, 1, 0].
-- For every trial in Block 2 (ADHD): rows 1–3 are exactly [0, 0, 1].
-- The indicator never changes within a subject. It never changes within a block. It never violates the one-hot property.
+- For columns in candidate Block 0, rows 1–3 are [1, 0, 0].
+- For columns in candidate Block 1, rows 1–3 are [0, 1, 0].
+- For columns in candidate Block 2, rows 1–3 are [0, 0, 1].
+- These observations establish a structural pattern only, not a clinical label.
 
 > [!IMPORTANT]
-> **Critical correction from prior misconception:** Earlier project documents hypothesized that rows 1–3 might represent stimulus categories (e.g., target vs. non-target events). This was **disproven** by direct data inspection. Rows 1–3 are block (clinical group) indicators — they are constant for every trial belonging to the same clinical group.
+> **Correction:** Direct inspection establishes only the binary one-hot pattern and its alignment with the configured ranges. It does not establish whether rows 1–3 encode stimuli, diagnosis, or another category. Do not treat them as clinical targets.
 
 **WHAT IS NOT ESTABLISHED about y_stim:**
 
 1. **The physical meaning of the word "stim"** in the filename `y_stim.mat` is UNKNOWN. It appears to be an artifact of the original MATLAB variable naming in the study, not a confirmed indicator of a stimulus type.
 
-2. **Whether rows 1–3 may be used directly as classification labels** — they may not. The clinical label must be derived from the block position (0, 1, or 2), not from rows 1–3 directly. Using rows 1–3 as labels is not approved.
+2. **Whether rows 1–3 or block positions may be used as classification labels** — neither is a verified clinical target. Do not assign diagnosis from these fields without independent evidence.
 
 3. **Any direct stimulus event information** (what happened during the trial, what the child was responding to, what the target/non-target structure was) is **UNKNOWN** from these files alone. No stimulus event codes are present in y_stim.
 
@@ -383,7 +394,7 @@ Direct inspection of all 33,902 columns found:
 
 **VERIFIED** — `sub_name_stim.mat` is a MATLAB v7.3 (HDF5) file containing a cell array of shape (1, 3).
 
-Each of the 3 inner cells is a list of filename strings, representing the source files for each clinical group:
+Each of the 3 inner cells is a list of filename strings, organized into candidate blocks:
 
 | Block | Prefix | Count | Example filename | Lexicographically sorted? |
 |---|---|---|---|---|
@@ -393,13 +404,13 @@ Each of the 3 inner cells is a list of filename strings, representing the source
 
 **VERIFIED** — All 144 filenames are globally unique (no repeats within or across blocks).
 
-**VERIFIED** — `sub_name_stim.mat` was created at the same instant as `y_stim.mat`: **Fri Feb 22 14:52:45 2019** (identical creation timestamp down to the second). This is strong evidence they were compiled together in the same MATLAB workspace.
+**OBSERVED** — `sub_name_stim.mat` and `y_stim.mat` have matching reported timestamps (**Fri Feb 22 14:52:45 2019**). This does not establish a keyed correspondence between their contents.
 
-**STRONGLY SUPPORTED** — The filenames are stored in alphabetical order (lexicographic sort). This matches MATLAB's standard `dir()` function behaviour, which returns files sorted alphabetically. If the original code iterated over the sorted file list with a loop index, the index directly corresponds to each filename's position in the sorted list.
+**OBSERVED / HYPOTHESIS** — The filenames are stored in alphabetical order. MATLAB `dir()` behavior is consistent with that ordering, but does not show that the row-0 values index these filenames.
 
-**STRONGLY SUPPORTED** — The ordinal index in `y_stim` row 0 (1, 2, 3, …) maps to the filename at that position in the corresponding sorted block (index 1 → filename at position 0, using 0-based indexing).
+**UNVERIFIED CANDIDATE MAPPING** — The ordinal index in `y_stim` row 0 may map to the filename at that position in the corresponding sorted block. Ordering and count consistency do not independently verify this correspondence.
 
-**UNKNOWN** — The individual subject `.mat` files listed in `sub_name_stim.mat` are NOT available on OSF. This means the filename-to-subject-index ordinal mapping cannot be independently verified by cross-checking individual trial counts. However, this limitation does NOT affect the safety of subject-level ML cross-validation — the composite subject key `(block, within-block-index)` is still fully deterministic and leak-free.
+**UNKNOWN** — The individual `.mat` files listed in `sub_name_stim.mat` are not available for cross-checking each candidate filename/index mapping. Therefore neither the participant identities nor participant-independent split safety are established by this composite key.
 
 ---
 
@@ -448,45 +459,33 @@ None of these explanations is established by any file in the project. Every one 
 
 ---
 
-## 18. d1–d7 Ordering
+## 18. Candidate d1–d7 / y_stim Ordering
 
-**VERIFIED** — `d1.mat` through `d7.mat` are in strict sequential order and map to `y_stim` columns in that order.
+The historical report proposed that `d1.mat` through `d7.mat` correspond in numeric order to consecutive `y_stim` column ranges. Header timestamps and count arithmetic are consistent with that hypothesis, but do not independently establish trial correspondence.
 
-This was established by two independent and complementary methods:
-
-**Method 1 — File timestamps:**
-Binary headers show the files were created in ascending chronological order (`d1` first, `d7` last) in a single 2-minute window, consistent with an automated sequential split.
-
-**Method 2 — Empirical signal boundary test:**
-At all 6 file junctions (`d1`/`d2`, `d2`/`d3`, …, `d6`/`d7`), the EEG signal of the subject who straddles the boundary was found on both sides with a Pearson correlation r >= 0.90. An unrelated subject's signal gave correlation r < 0.57. This was tested at all 6 boundaries with no failures.
-
-The mapping is:
-- `d1` ↔ `y_stim` columns 0–4999
-- `d2` ↔ `y_stim` columns 5000–9999
-- `d3` ↔ `y_stim` columns 10000–14999
-- `d4` ↔ `y_stim` columns 15000–19999
-- `d5` ↔ `y_stim` columns 20000–24999
-- `d6` ↔ `y_stim` columns 25000–29999
-- `d7` ↔ `y_stim` columns 30000–33901
+The earlier boundary correlations used slices selected according to the proposed mapping. They are candidate-dependent diagnostics, not an independent test of ordering or participant identity. Therefore, the following offsets are arithmetic candidates only:
+- `d1` ↔ candidate `y_stim` columns 0–4999
+- `d2` ↔ candidate `y_stim` columns 5000–9999
+- `d3` ↔ candidate `y_stim` columns 10000–14999
+- `d4` ↔ candidate `y_stim` columns 15000–19999
+- `d5` ↔ candidate `y_stim` columns 20000–24999
+- `d6` ↔ candidate `y_stim` columns 25000–29999
+- `d7` ↔ candidate `y_stim` columns 30000–33901
 
 ---
 
-## 19. Validated Mappings
+## 19. Observed Structure and Unresolved Correspondence
 
-This section summarises every mapping that has been verified and is safe to rely on.
+This section distinguishes structural observations from unresolved metadata correspondence. No participant or clinical label mapping below is independently verified.
 
 | Mapping | Status | Evidence |
 |---|---|---|
-| Global trial index → source file | **VERIFIED** | Timestamp + boundary signal correlation tests |
-| Global trial index → within-file index | **VERIFIED** | Direct arithmetic from file trial counts |
-| Global trial index → y_stim column | **VERIFIED** | Trial count sum = y_stim column count; boundary tests |
-| y_stim column → within-block subject index (row 0) | **VERIFIED** | 144 contiguous runs, 0 gaps, 0 duplicates |
-| y_stim columns 1–3 → clinical group one-hot | **VERIFIED** | All 33,902 columns checked; perfect block alignment |
-| Block 0 → HC | **STRONGLY SUPPORTED** | Filename prefix + paper count match |
-| Block 1 → ADD | **STRONGLY SUPPORTED** | Filename prefix + paper count match |
-| Block 2 → ADHD | **STRONGLY SUPPORTED** | Filename prefix + paper count match |
-| Composite subject key (`HC_01`…`ADHD_48`) | **VERIFIED** | 144 unique, non-overlapping identifiers |
-| Within-block subject index → specific filename | **STRONGLY SUPPORTED** | Timestamp alignment + MATLAB `dir()` sort behaviour; cannot be independently verified without individual files |
+| File trial order → metadata column | **UNRESOLVED** | Equal counts and candidate-selected correlations are not an independent trial key |
+| y_stim column → row-0 candidate index | **STRUCTURALLY OBSERVED** | 144 contiguous value runs |
+| y_stim rows 1–3 → clinical group | **UNRESOLVED** | One-hot structure observed; semantics not established |
+| Filename prefix blocks → paper cohort terminology | **CANDIDATE MAPPING** | Prefixes and counts align with paper-reported cohorts |
+| Composite candidate key | **CONSTRUCTED, NOT VERIFIED IDENTITY** | Unique by construction; mapping to a person is unresolved |
+| Within-block row-0 index → specific filename | **UNRESOLVED** | No independent per-file trial-count cross-check |
 | EEG column → chan.mat entry | **UNKNOWN** | 56 data columns vs. 60 metadata entries; mapping not established |
 
 ---
@@ -511,19 +510,19 @@ The following questions are formally **UNKNOWN** and must not be silently resolv
 
 ## Summary Section A — Data Facts We Can Safely Use
 
-These facts are **VERIFIED** or **STRONGLY SUPPORTED** and can be used without qualification:
+The following structural facts are observed or source-reported; identity and diagnosis correspondence remain qualified as stated:
 
-1. **33,902 trials** total, across 144 subjects in 3 groups.
+1. **33,902 EEG trials** and 144 entries/runs are reported or structurally observed; the identity mapping is unresolved.
 2. Every trial has shape **(385, 56)** — 385 time steps, 56 channels — stored as **float32**.
-3. All data is **complete** — zero NaN, zero Inf, across all files.
-4. The **7 EEG files are sequential**: d1 → d7, in that order, with no gaps.
-5. The file-to-y_stim column mapping is deterministic and verified (see Section 18).
-6. The **144 subject runs** in y_stim row 0 are contiguous, complete, and unique.
-7. The **composite subject key** (`HC_01`…`ADHD_48`) is safe for subject-level cross-validation.
-8. The **clinical groups** are: 44 HC, 52 ADD, 48 ADHD.
-9. **y_stim rows 1–3 are group block indicators**, not stimulus categories.
-10. **Clinical labels must be derived from block position** (0, 1, or 2), not from y_stim rows directly.
-11. **Trial counts per subject vary widely** (min 46, max 295) — this imbalance must be tracked.
+3. The inspected data samples were reported to contain no NaN or Inf.
+4. The seven files are named d1 through d7; their trial-to-metadata order remains unverified.
+5. File trial counts and `y_stim` column count agree; exact trial-to-column correspondence remains unverified.
+6. There are 144 contiguous candidate row-0 value runs.
+7. Composite keys can encode the candidate blocks and row-0 values but cannot establish participant-independent evaluation.
+8. The paper reports cohort counts of 44/52/48; filename-prefix and row-range mapping remains candidate.
+9. **y_stim rows 1–3 have one-hot structure; their semantics are unverified and they must not be used as clinical targets.**
+10. No verified clinical target labels are established from the available `y_stim` rows or filename mappings.
+11. **Candidate row-0 run lengths vary widely** (reported min 46, max 295); participant interpretation is unverified.
 12. The **sampling rate is 256 Hz** (paper-reported).
 13. Values likely represent microvolts (INFERRED, not confirmed).
 
@@ -533,8 +532,8 @@ These facts are **VERIFIED** or **STRONGLY SUPPORTED** and can be used without q
 
 These facts are **STRONGLY SUPPORTED** or **INFERRED** and carry caveats:
 
-1. **The filename-to-subject-index ordinal link** (`sub_name_stim` position → row-0 index) is strongly supported but not independently verified. It does NOT affect ML evaluation safety.
-2. **Clinical group labels** (HC/ADD/ADHD) come from filename token matching and count alignment, not from an explicit per-participant diagnosis field in any file.
+1. **The filename-to-row-0 ordinal link** (`sub_name_stim` position → row-0 index) is a candidate mapping and is not independently verified.
+2. **Clinical diagnosis labels** are not available as a verified per-participant field; filename tokens and count alignment do not establish diagnoses.
 3. **The 385th sample** is unresolved. Do not crop it, pad it, or assign it physical meaning without evidence.
 4. **The 56-to-60 channel mismatch** — the 56 EEG columns cannot be named or spatially located until the missing 4 are identified.
 5. **Value units** are likely µV but not formally confirmed.
@@ -564,13 +563,13 @@ These are not architecture decisions. They are hard constraints established by t
 
 1. **Input shape is (385, 56) per trial.** This is fixed by the data. It cannot be changed without a documented preprocessing decision that has been explicitly approved.
 
-2. **There are exactly 3 output classes:** HC, ADD, ADHD. This is the classification target.
+2. **No verified classification target labels are established by these metadata.**
 
-3. **Subject must be the unit of splitting.** All 385 × 56 values for one subject must stay in one partition. Trial-level splitting is prohibited.
+3. **Participant-independent splitting requires verified participant identity mappings.** Candidate keys alone do not satisfy that requirement.
 
-4. **There are only 144 subjects.** Any cross-validation or test design is limited by this number. Folds must be designed with this in mind.
+4. The paper reports 144 participants and metadata has 144 candidate entries/runs; participant correspondence remains unverified.
 
-5. **Trial counts are unequal across subjects** (46 to 295). Any training objective must account for this, or else high-trial subjects will dominate.
+5. Candidate row-0 run lengths are unequal (reported 46 to 295). Their interpretation as per-participant trial counts is unverified.
 
 6. **No spatial channel mapping may be assumed.** The 56 data columns cannot be assigned to named electrodes or scalp positions until the 56-vs-60 mismatch is resolved.
 
@@ -578,7 +577,7 @@ These are not architecture decisions. They are hard constraints established by t
 
 8. **float32 must be preserved.** Silent upcasting or downcasting requires an explicit decision.
 
-9. **Labels must come from block identity, not y_stim rows 1–3 directly.** The block boundary positions are the authoritative source of group identity.
+9. **Do not treat candidate block identity or y_stim rows 1–3 as verified clinical labels.**
 
 10. **The raw .mat files are immutable.** No code may write to them. All derived data goes to a separate, versioned output location.
 
@@ -589,9 +588,9 @@ These are not architecture decisions. They are hard constraints established by t
 - *`dataset_metadata_investigation.md` — script-based metadata inspection*
 - *`docs/ADHD_EEG_PREPROCESSING_AUDIT.md` — binary-level audit with evidence classification*
 - *`docs/dataset-preprocessing-audit.md` — preprocessing methodology audit*
-- *`docs/trial_subject_mapping_validation.md` — Sprint 1 Gate 1 validation report*
+- *`docs/trial_subject_mapping_validation.md` — historical Sprint 1 structural diagnostics; its identity/diagnosis verdict is superseded*
 - *`docs/architecture-preparation/01_PROJECT_STATE_AUDIT.md` — project state audit*
-- *`scripts/validate_trial_subject_mapping.py` — the script that performed Gate 1 validation*
+- *`scripts/validate_trial_subject_mapping.py` — candidate mapping structural diagnostics*
 - *He et al. (2023), Journal of Neural Engineering — base paper*
 
 *Document produced by: Antigravity AI (read-only inspection — no architecture decisions, no preprocessing, no model choices)*

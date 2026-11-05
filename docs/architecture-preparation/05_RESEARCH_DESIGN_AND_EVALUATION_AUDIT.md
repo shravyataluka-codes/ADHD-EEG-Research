@@ -14,17 +14,26 @@
 
 The current project-state and Sprint 2 records are used to identify what is frozen. Where older documents make stronger or conflicting claims, this audit notes the conflict rather than silently adopting a proposal. In particular, Gate 2, Gate 3, Gate 4, and Gate 6 are recorded as not passed in the current project-state audit.
 
+> [!WARNING]
+> **Provenance correction:** Earlier decisions in this audit that treated
+> block/index keys as verified participant groups, filename prefixes/counts as
+> clinical labels, or rows 1–3 as known group indicators are superseded by the
+> Sprint 2 evidence reconciliation. These are candidate mappings or observed
+> structure only. Their correspondence to EEG trials, verified identities, and
+> clinical diagnoses remains unresolved. A participant-independent evaluation
+> cannot be claimed from the candidate keys.
+
 ## 1. The research question and what a result would mean
 
-The project asks whether EEG recordings from the available cohort can distinguish its three recorded groups—healthy controls (HC), ADD, and ADHD—for **subjects not used to fit or select the model**. It also intends to examine which cases succeed or fail and what information contributes to predictions.
+The proposed research question is whether EEG recordings can distinguish the paper-reported cohorts for **verified participants not used to fit or select a model**, if an authoritative trial-to-participant join and clinical target labels become available. The current candidate mappings do not support such an evaluation. The project also intends to examine which cases succeed or fail and what information contributes to predictions.
 
 This is a research classification question about one released dataset and its group labels. A good evaluation can provide evidence about performance under the stated data and partition protocol. It does not, by itself, show that a model diagnoses ADHD, is useful in clinical practice, or will work on data from other hospitals or recording systems.
 
 | Concept | What it means | Why it matters here | Required by project? | Decided? | What remains open? |
 |---|---|---|---|---|---|
-| Research question | Ask whether EEG carries information that lets a system distinguish the dataset's HC, ADD, and ADHD groups for people absent from model development. | Makes the target claim testable and prevents confusing group classification with diagnosis or clinical usefulness. | **Yes.** The scope and project-state audits describe three-group classification on unseen subjects. | The broad question and three group labels are decided. | Exact model, input processing, primary metric, evaluation unit, and test design. |
+| Research question | Ask whether EEG carries information that distinguishes paper-reported cohorts for verified participants absent from model development, if valid local joins and diagnosis labels become available. | Makes the target claim testable and prevents confusing candidate mappings with diagnosis or clinical usefulness. | **Proposed, but blocked by provenance evidence.** | The paper reports three cohorts; no local clinical target labels or participant crosswalk are verified. | Establish trial-to-participant correspondence and verified target labels before fixing the task. |
 | Evaluation population | The people and recordings to which the reported result directly applies. | The files represent 144 children from one dataset/cohort, not thousands of independent participants and not a collection of independent external sites. | **Yes.** The project scope says this dataset is for development/evaluation and is not an external clinical dataset. | The available cohort and its counts are documented; broader target populations are not established. | Any broader population claim would require evidence beyond this dataset. |
-| Group label | The supplied HC/ADD/ADHD group assignment used as the classification target. The local block-to-group mapping is strongly supported by filename prefixes and exact count agreement with the paper; the data do not contain an explicit participant diagnosis field. | Evaluation can only test prediction of these assigned labels. It cannot independently verify the underlying diagnosis. | **Yes.** The three groups are the task labels. | Use block identity for the group label; do not use `y_stim` rows 1–3 directly as input labels. The individual diagnosis provenance remains limited. | How to describe the label provenance and its limitation in final reporting. |
+| Candidate diagnostic-group mapping | Filename prefixes and aggregate counts align with paper-reported cohorts, but no participant-level diagnosis record is linked to local trials. | Candidate blocks cannot be treated as clinical targets or used to claim diagnosis classification. | **Open / blocked.** | No verified clinical target is established from the available metadata. Do not use block position or `y_stim` rows 1–3 as labels. | Obtain authoritative per-participant diagnosis labels and validate the trial join. |
 
 ### What “unseen subject” means
 
@@ -34,8 +43,8 @@ A subject is a person; a trial is one short EEG segment from that person. Here, 
 
 | Concept | What it means | Why it matters here | Required by project? | Decided? | What remains open? |
 |---|---|---|---|---|---|
-| Subject-level separation | Keep every trial from a given subject in one partition only. | Trials from one person share person-specific signal characteristics. If some enter training and others enter testing, the model may recognize the person rather than learn patterns that transfer to new people. The trial count (33,902) must not be mistaken for the number of independent people (144). | **Yes. Explicitly required** for claims about unseen participants; trial-level splitting is prohibited by the project-state audit. | The grouping unit is frozen as the composite subject key (group block plus within-block index). | Exact partition assignments, number of folds, held-out test design, and random seed. |
-| Subject versus filename identity | The composite key (`HC_01` … `ADHD_48`) groups trials. Its association with an original human filename is only strongly supported, not independently proven. | Safe subject grouping does not require a person's filename. Avoid treating the ordinal filename link as stronger evidence than it is. | **Yes**, preserve subject identity through partitioning. | Composite keys are available and validated for grouping; the filename caveat is documented. | Whether filename identity is needed for any future analysis. |
+| Subject-level separation | Keep every trial from a verified participant in one partition only. | Without an authoritative trial-to-participant join, candidate keys cannot demonstrate that trials from one person stay together. | **Required for claims about unseen participants**, but currently not implementable from verified keys. | No participant grouping key is established. | Verify the trial-to-participant join before assigning partitions. |
+| Candidate key versus filename identity | The block/index composite key is unique by construction; its association with a participant or filename is unverified. | A deterministic key does not establish identity or safe subject grouping. | **Open / blocked** until independent correspondence evidence is available. | Candidate key is not validated as a participant key. | Obtain independent participant identifiers and verify candidate mappings. |
 | Trial-level versus subject/session-level result | A trial-level score counts each EEG segment as an observation. A subject/session-level score first produces a result for a person/session, potentially from multiple trials, and then evaluates those person/session results. | The prototype objective calls for a subject/session-level output. Trial counts vary considerably, so pooling all trials gives more influence to people with more trials. | **Subject/session-level output is required in the prototype scope.** The research evaluation unit is explicitly listed as undecided in the project-state audit. | Output intent is decided; metric unit and any aggregation rule are not. | How predictions from a subject's trials become one result, and whether both trial- and subject-level views are needed for analysis. |
 
 ## 2. Training, validation, and testing
@@ -67,7 +76,7 @@ He et al. report a 6,000-trial test set and five-fold training/validation proced
 | Same-subject trials cross partitions | The model trains on some trials from a person and is tested on other trials from that person. | EEG segments from the same person are related. The score may reward recognition of familiar people, not transfer to new subjects. | **Prohibited** for the unseen-subject evaluation. | Subject is the required grouping unit; exact partition implementation is open. | Verify zero subject overlap for every partition/fold. |
 | Whole-dataset fitted preprocessing | A mean, scale, feature selection, learned transform, or other data-dependent setting is computed using training and held-out subjects together. | Held-out data influence the representation or settings before evaluation. This can bias results even if the labels are not directly passed to the model. | **Prohibited** for normalization; training-only fitting is required for data-dependent operations. | No global normalization; exact preprocessing is not approved and remains open. | For each future transformation, specify whether it is data-dependent and where it is fitted. |
 | Test-driven decisions | The test score or test labels influence architecture, preprocessing, features, thresholds, early stopping, or which result is reported. | The test set then acts like another validation set; the final score no longer provides a clean check. | **Prohibited** by the split contract. | The principle is required; exact test protocol is open. | Define the final test-use rule before evaluation. |
-| Label or subject metadata as model input | The target label, group block, subject key, trial order, or other metadata that directly reveals the answer is accidentally included as EEG input. | The model could learn the answer from metadata rather than EEG. `y_stim` rows 1–3 are group-block indicators, not stimulus categories. | **Required control.** Group label must be separated from EEG input and derived from block identity. | Label source and the ban on using rows 1–3 as classifier labels are decided. | Confirm the model input contains only the intended EEG-derived information. |
+| Label or subject metadata as model input | Candidate block/key metadata, trial order, or other fields that reveal the candidate assignment are accidentally included as EEG input. | This can create target leakage even when the fields' clinical semantics are unverified. `y_stim` rows 1–3 have one-hot structure but unresolved meaning. | **Required control.** Keep all metadata out of EEG inputs unless separately justified. | No verified clinical target source is established; do not derive one from block position or rows 1–3. | Verify the target and model-input contract after authoritative provenance is available. |
 | Resampling before splitting | Duplicated or synthesized examples from one subject are created before the split, allowing closely related examples to land in different partitions. | This can recreate the same-subject overlap problem indirectly. | Follows from the subject-separation and leakage requirements. | No balancing method is selected. | If imbalance handling is chosen, define it inside the allowed training partition. |
 | Adaptive preprocessing across held-out people | A procedure uses the held-out subjects' data to estimate shared parameters or to make decisions that are then evaluated as if fixed in advance. | The evaluation may no longer reflect a model and pipeline fixed without those subjects. | Required to be controlled and documented; training-only fitting is explicit for learned statistics. | Exact processing is undecided. | Distinguish fixed signal operations from operations that estimate parameters from a cohort. |
 
@@ -147,8 +156,8 @@ The older master guide and ML execution plan include candidate baseline and arch
 
 ### It can support, subject to a future approved protocol
 
-- A three-group classification study on the released EEG trials and their HC/ADD/ADHD group labels.
-- An internal test of generalization to held-out subjects from this cohort, **if** every subject is kept entirely outside training and all development decisions, and the label/data mapping is used as documented.
+- A future three-group classification study, if local trials are authoritatively linked to participant identities and verified clinical labels.
+- An internal test of participant-independent generalization only after the participant crosswalk is verified and held-out participants remain outside training and all development decisions.
 - Reporting class-specific successes and errors, with the evaluation unit and unequal subject trial counts made explicit.
 - Controlled comparisons within this dataset if the comparison methods, protocol, and selection boundaries are decided in advance.
 - A reproducibility record for the project’s own final protocol and results.
@@ -163,7 +172,7 @@ The older master guide and ML execution plan include candidate baseline and arch
 - That the project approach is better than another model unless a fair baseline comparison is completed under the same protocol.
 - Reliable estimates for a broader population solely by treating the 33,902 trials as independent people.
 
-The dataset contains 144 children from one cohort (44 HC, 52 ADD, 48 ADHD), with varying numbers of trials per person. Group labels are supported by block and filename/count evidence, not by a separate per-participant diagnosis field in the supplied files. The paper also has unresolved reporting inconsistencies. These are limits on interpretation, not evidence for an invented research gap.
+The paper reports 144 children from one cohort (44 HC, 52 ADD, 48 ADHD); local filename blocks and row-0 runs have matching counts, but their participant and diagnosis correspondence is unverified. The paper also has unresolved reporting inconsistencies. These are limits on interpretation, not evidence for an invented research gap.
 
 ## A. What we must evaluate
 
@@ -191,10 +200,10 @@ These are evaluation questions and controls, not an instruction to implement a p
 
 ## C. What is already decided
 
-- The broad research task is three-group EEG classification for **unseen subjects**, with attention to strengths and failure cases.
-- All trials from one subject must stay in the same partition for unseen-subject evaluation; the composite subject key is available for this purpose.
-- The three group labels are HC, ADD, and ADHD. The target is derived from group-block identity; `y_stim` rows 1–3 are not to be used directly as labels.
-- The dataset contains 144 subjects and 33,902 trials; trial counts vary by subject and group.
+- The proposed research task is three-group EEG classification for **verified unseen participants**, conditional on obtaining verified participant and diagnosis mappings.
+- All trials from one verified participant must stay in the same partition for participant-independent evaluation; current candidate keys do not establish this.
+- The paper reports three cohorts and their sizes. Candidate block positions and `y_stim` rows 1–3 are not verified clinical targets.
+- The paper reports 144 participants and 33,902 trials; local run lengths and participant correspondence are not independently verified.
 - The raw files must remain unchanged. The stored 385 time positions, 56 channel columns, and `float32` values are to be preserved unless a separately approved decision changes that handling.
 - Full-dataset normalization is prohibited; any approved fitted statistics must use training data only.
 - The base paper’s architecture is a reference, not an automatically adopted design.
@@ -218,7 +227,7 @@ These are evaluation questions and controls, not an instruction to implement a p
 - “The model diagnoses ADHD,” “is clinically validated,” “is ready for deployment,” or “can replace clinical judgement.”
 - “The model generalizes to all children/patients,” “other hospitals,” “other devices,” or populations not evaluated.
 - “The model works on unseen people” if subjects or data-derived decisions crossed partition boundaries, or if the split unit is not reported.
-- “The method is better” or “the Transformer is beneficial” without a fair baseline comparison on the same subject-grouped protocol.
+- “The method is better” or “the Transformer is beneficial” without a fair baseline comparison on a protocol using verified participant and diagnosis mappings.
 - “The model found the cause/biomarker/brain region of ADHD” based only on model attribution or attention visualizations.
 - “The paper leaked” or “the paper's result is invalid” based solely on its unspecified split unit.
 - Any expected or promised performance percentage before the experiment is run.
@@ -233,4 +242,3 @@ These are evaluation questions and controls, not an instruction to implement a p
 - [trial_subject_mapping_validation.md](../trial_subject_mapping_validation.md) — evidence and caveats for trial-to-subject/group mapping.
 - [ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md](../ML_METHODOLOGY_AND_RESEARCH_GAP_AUDIT.md) and [ML_EXECUTION_PLAN.md](../ML_EXECUTION_PLAN.md) — candidate metrics, gates, baselines, and reproducibility ideas; proposals were not treated as frozen choices.
 - [README.md](../../README.md) — repository-level research objective and record.
-
