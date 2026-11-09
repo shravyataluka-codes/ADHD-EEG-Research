@@ -6,10 +6,11 @@ It records our understanding, analysis, decisions, and progress throughout the r
 
 ## Current Stage
 
-- Domain understanding
-- Base paper analysis
-- Research log
-- Literature synthesis for preprocessing
+- Sprint 3 preparation: synthetic EEG Conformer encoder and input-representation work.
+- The selected Conformer is an architecture candidate, not an experimental winner.
+- Real-data training and participant-independent evaluation remain gated by verified participant/diagnosis provenance and approved protocol decisions.
+
+See the [pre-Transformer readiness audit](ADHD_PRE_TRANSFORMER_AUDIT.md) and [Sprint 3-8 execution plan](SPRINT_3_TO_8_EXECUTION_PLAN.md).
 
 The documentation will grow as the research progresses.
 

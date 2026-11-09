@@ -12,11 +12,12 @@ The project's original broad aim was three-class classification of ADHD, ADD, an
 
 ## Current status and research decision
 
-**Status: evidence review and implementation groundwork; the proposed benchmark has not been approved for execution.**
+**Status: Sprint 3 preparation; the compact EEG Conformer is the selected primary architecture candidate, with EEGNet retained as a comparison baseline. No model code or experiment has been implemented.**
 
-- The tracked Sprint 2 contract has not passed its decision gate. It allows preserving the supplied samples but does not approve signal-changing preprocessing, model training, or an evaluation split.
-- A current **untracked** decision draft in this workspace proposes a conditional, reproducible evaluation of the Dresden cohort, potentially using compact EEGNet/CNN baselines and trial-random versus participant-held-out comparisons. It describes the novelty case as weak unless the work resolves meaningful provenance/comparability problems and reports an auditable participant-level estimate. This is a working proposal—not team approval, a frozen protocol, or a result—and the draft is not part of the tracked repository.
-- Earlier plans and the root-level master guide propose a Transformer/Conformer, filtering, ICA, theta/beta features, or topographic explanations. These are not approved study decisions and should not be read as implemented functionality.
+- Sprint 1 and Sprint 2 engineering checkpoints are complete; the Sprint 2 scientific limitations remain. Trial-to-participant and diagnosis mappings are unverified, so real-data labels, participant-independent splits, training, and evaluation remain gated.
+- The eight-sprint implementation plan and Conformer tensor specification are in [SPRINT_3_TO_8_EXECUTION_PLAN.md](docs/SPRINT_3_TO_8_EXECUTION_PLAN.md). Sprints 3-5 may proceed with synthetic development; Sprints 6-8 require the documented scientific gates.
+- The Conformer is a research-design choice, not an experimentally proven improvement. EEGNet is a comparison baseline. The dated [Research Decision and Implementation Plan](docs/RESEARCH_DECISION_AND_IMPLEMENTATION_PLAN.md) records an earlier EEGNet-primary proposal and remains as historical decision context.
+- No signal-changing preprocessing is approved by the Sprint 2 contract. The existing filter/notch/ICA implementation must not be treated as an approved research pipeline.
 - The literature review finds that participant-held-out evaluation on this cohort is not new: Vahid et al. (2019) and Wang et al. (2022) report such evaluations. Whether a carefully specified reproduction could make a useful contribution remains conditional, not a confirmed novelty claim.
 
 Numbers reported in papers are **not results reproduced by this repository**. In particular, the accuracy figures reported by He et al. are not results of this codebase.
@@ -130,6 +131,8 @@ Proceed in this order; do not begin model training or cohort preprocessing first
 
 ## Further documentation
 
+- [Pre-Transformer readiness audit](docs/ADHD_PRE_TRANSFORMER_AUDIT.md)
+- [Sprint 3-8 execution plan](docs/SPRINT_3_TO_8_EXECUTION_PLAN.md)
 - [Project scope and system specification](docs/PROJECT_SCOPE_AND_SYSETEM_SPECIFICATION.md)
 - [Sprint map](docs/PROJECT-SPRINT-MAP.md)
 - [Sprint 2 decision analysis](docs/SPRINT_2_DECISION_ANALYSIS.md)
