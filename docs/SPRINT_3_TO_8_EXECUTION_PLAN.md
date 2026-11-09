@@ -240,6 +240,21 @@ The 144 paper-reported participants, not 33,902 repeated trials, are the relevan
 6. Generate real manifests only after approvals; review realized fold distributions before training. Fit all learned transforms/weights and selection only in their allowed training partitions.
 7. Run the predeclared evaluation using the Sprint 5 runner and persist out-of-fold predictions with participant-level aggregation and uncertainty metadata.
 
+### Task 2C closure: Split Audit Output
+
+**Status:** Accepted for synthetic-only scope.
+
+- The audit schema version and split algorithm version are independent.
+- Deterministic JSON audit serialization is implemented.
+- Assignment, locator, provenance, and trial-/participant-level class-count information is preserved.
+- Final Sprint 6 validation: 144 tests passed, 0 failed, 0 skipped.
+- No real EEG data, real participant assignments, real folds, or real evaluation were authorized.
+
+**Optional, non-blocking test hardening:**
+
+1. Compare every exported provenance field (`status`, `source_reference`, and `rationale`) with its source record and verify exact partition membership.
+2. Explicitly assert `AUDIT_SCHEMA_VERSION != SPLIT_ALGORITHM_VERSION`.
+
 **Existing files to reuse:** [data_access.py](../src/adhd_eeg/data_access.py), [dataset.py](../src/adhd_eeg/dataset.py), [evaluation.py](../src/adhd_eeg/evaluation.py), [SPRINT_2_EVALUATION_READINESS_AUDIT.md](SPRINT_2_EVALUATION_READINESS_AUDIT.md), [data_contract.md](data_contract.md).
 
 **New files expected (after gates):**
@@ -268,7 +283,7 @@ The 144 paper-reported participants, not 33,902 repeated trials, are the relevan
 
 **Objective:** Measure the contribution and sensitivity of the predeclared Conformer components and compare against EEGNet under matched conditions, without post-hoc selection on test results.
 
-**Engineering that can begin now:** Ablation configuration schema and synthetic tests. No scientific ablation result can be produced from synthetic data.
+**Engineering that can begin now:** Ablation configuration schema and synthetic tests. No scientifi- The test sc ablation result can be produced from synthetic data.
 
 **Tasks in execution order:**
 

@@ -10,6 +10,8 @@ from unittest.mock import patch
 
 try:
     import torch
+    import h5py
+    import numpy as np
     import torch.nn as nn
     from torch.utils.data import DataLoader, TensorDataset
 except ImportError:
@@ -20,6 +22,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 if torch is not None:
     from adhd_eeg.classifier import CLASS_ORDER, NUM_CLASSES, EEGConformerClassifier
     from adhd_eeg.conformer import EXPECTED_CHANNELS, EXPECTED_TIME_STEPS
+    from adhd_eeg.data_access import TrialManifest
+    from adhd_eeg.dataset import EEGTrialDataset
+    from adhd_eeg.experiment_data import (
+        ExperimentTrialDataset,
+        ExperimentTrialRecord,
+        MappingClaim,
+        MappingProvenance,
+        TrialLocator,
+    )
     from adhd_eeg.training import (
         AUTHORIZED_PROTOCOL_PURPOSE,
         EarlyStopping,
@@ -29,6 +40,7 @@ if torch is not None:
         TrainingGateError,
         build_optimizer,
         build_scheduler,
+        calculate_class_weights,
         compute_loss,
         evaluate_epoch,
         get_environment_metadata,
@@ -43,7 +55,7 @@ if torch is not None:
 
 @unittest.skipIf(torch is None, "Install the optional 'pytorch' extra to run training tests")
 class TrainingPipelineTests(unittest.TestCase):
-    """Test suite containing exactly 24 unit and integration tests for Sprint 5."""
+    """Unit and integration tests for the Sprint 5 synthetic training pipeline."""
 
     def setUp(self) -> None:
         set_seed(42)
@@ -192,6 +204,188 @@ class TrainingPipelineTests(unittest.TestCase):
             compute_loss(torch.empty(0, NUM_CLASSES, dtype=torch.float32), torch.empty(0, dtype=torch.long))
         with self.assertRaises(ValueError):
             compute_loss(logits, torch.empty(0, dtype=torch.long))
+
+    def test_training_only_class_weights_and_optional_weighted_loss(self) -> None:
+        training_labels = torch.tensor([0, 0, 1, 2], dtype=torch.long)
+        validation_labels = torch.tensor([0, 0, 0], dtype=torch.long)
+        test_labels = torch.tensor([2, 2, 2], dtype=torch.long)
+
+        weights = calculate_class_weights(training_labels)
+        original_weights = weights.clone()
+        validation_labels.fill_(2)
+        test_labels.fill_(0)
+        torch.testing.assert_close(
+            calculate_class_weights(training_labels),
+            original_weights,
+        )
+        torch.testing.assert_close(
+            weights,
+            torch.tensor([2 / 3, 4 / 3, 4 / 3], dtype=torch.float32),
+        )
+
+        with self.assertRaisesRegex(ValueError, "every model class"):
+            calculate_class_weights(torch.tensor([0, 0, 1], dtype=torch.long))
+        with self.assertRaisesRegex(ValueError, "one-dimensional"):
+            calculate_class_weights(torch.tensor([[0, 1, 2]], dtype=torch.long))
+
+        logits = torch.tensor(
+            [[2.0, 0.0, -1.0], [0.0, 2.0, -1.0]],
+            dtype=torch.float32,
+        )
+        targets = torch.tensor([0, 1], dtype=torch.long)
+        self.assertTrue(
+            torch.equal(
+                compute_loss(logits, targets),
+                torch.nn.functional.cross_entropy(logits, targets),
+            )
+        )
+        torch.testing.assert_close(
+            compute_loss(logits, targets, class_weights=weights),
+            torch.nn.functional.cross_entropy(logits, targets, weight=weights),
+        )
+
+    def test_train_one_epoch_forwards_explicit_class_weights(self) -> None:
+        class FixedLogitModel(nn.Module):
+            def __init__(self) -> None:
+                super().__init__()
+                self.logits = nn.Parameter(torch.tensor([0.5, 0.0, -0.5]))
+
+            def forward(self, signals: torch.Tensor) -> torch.Tensor:
+                return self.logits.expand(signals.shape[0], -1)
+
+        model = FixedLogitModel()
+        signals = torch.zeros(2, EXPECTED_TIME_STEPS, EXPECTED_CHANNELS)
+        targets = torch.tensor([0, 1], dtype=torch.long)
+        loader = DataLoader(TensorDataset(signals, targets), batch_size=2)
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+        class_weights = torch.tensor([1.0, 2.0, 3.0])
+
+        with patch(
+            "adhd_eeg.training.compute_loss", wraps=compute_loss
+        ) as compute_loss_spy:
+            train_one_epoch(
+                model,
+                loader,
+                optimizer,
+                class_weights=class_weights,
+            )
+
+        compute_loss_spy.assert_called_once()
+        self.assertIs(
+            compute_loss_spy.call_args.kwargs["class_weights"], class_weights
+        )
+
+    def test_experiment_dataset_training_passes_only_signals_to_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            dataset_dir = Path(tmp_dir)
+            with h5py.File(dataset_dir / "y_stim.mat", "w") as metadata_file:
+                metadata_file.create_dataset(
+                    "y_stim",
+                    data=np.array(
+                        [[1, 2], [0, 0], [0, 0], [0, 0]], dtype=np.float64
+                    ),
+                )
+
+            for file_number in (1, 2):
+                trials = np.full(
+                    (EXPECTED_TIME_STEPS, EXPECTED_CHANNELS, 1),
+                    fill_value=file_number,
+                    dtype=np.float32,
+                )
+                with h5py.File(dataset_dir / f"d{file_number}.mat", "w") as eeg_file:
+                    eeg_file.create_dataset(
+                        f"d{file_number}", data=trials, dtype=np.float32
+                    )
+
+            manifest = TrialManifest(
+                dataset_dir,
+                file_trial_counts=(1, 1),
+                group_ranges=(("HC", 0, 1), ("ADD", 1, 2)),
+            )
+            participant_ids = (
+                "synthetic-fixture:participant-001",
+                "synthetic-fixture:participant-002",
+            )
+            diagnoses = ("HC", "ADD")
+            source_filenames = ("d1.mat", "d2.mat")
+            records = []
+            for index, (participant_id, diagnosis, filename) in enumerate(
+                zip(participant_ids, diagnoses, source_filenames)
+            ):
+                claim = MappingClaim(
+                    status="synthetic_fixture",
+                    source_reference=f"synthetic-fixture:mapping-{index}",
+                    rationale="Fabricated test fixture only.",
+                )
+                records.append(
+                    ExperimentTrialRecord(
+                        locator=TrialLocator(filename, 0),
+                        participant_id=participant_id,
+                        diagnosis=diagnosis,
+                        mapping_provenance=MappingProvenance(
+                            participant=claim,
+                            diagnosis=claim,
+                        ),
+                        source_snapshot_id="synthetic-fixture:snapshot-001",
+                        source_file_sha256=("a" if index == 0 else "b") * 64,
+                        protocol_id="synthetic-fixture:protocol-001",
+                        evidence_kind="synthetic_fixture",
+                    )
+                )
+
+            experiment_dataset = ExperimentTrialDataset(
+                EEGTrialDataset(manifest), records
+            )
+            loader = DataLoader(experiment_dataset, batch_size=2, shuffle=False)
+            expected_batch = next(iter(loader))
+            batch_metadata = expected_batch[2]
+            self.assertEqual(batch_metadata["participant_id"], list(participant_ids))
+            self.assertEqual(
+                batch_metadata["source_filename"], list(source_filenames)
+            )
+            candidate_metadata = tuple(
+                value
+                for index in range(manifest.total_trials)
+                for value in (
+                    manifest.metadata_for(index).candidate_participant_id,
+                    manifest.metadata_for(index).candidate_diagnostic_group,
+                    manifest.metadata_for(index).candidate_y_stim_column,
+                )
+            )
+
+            class SpyModel(nn.Module):
+                def __init__(self) -> None:
+                    super().__init__()
+                    self.logits = nn.Parameter(torch.tensor([0.1, 0.2, 0.3]))
+                    self.received_calls: list[
+                        tuple[tuple[object, ...], dict[str, object]]
+                    ] = []
+
+                def forward(self, *args: object, **kwargs: object) -> torch.Tensor:
+                    self.received_calls.append((args, kwargs))
+                    signals = args[0]
+                    if not isinstance(signals, torch.Tensor):
+                        raise TypeError("spy model expected an EEG signal tensor")
+                    return self.logits.unsqueeze(0).expand(signals.shape[0], -1)
+
+            model = SpyModel()
+            optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+            train_one_epoch(model, loader, optimizer, device=torch.device("cpu"))
+
+            self.assertEqual(len(model.received_calls), 1)
+            received_args, received_kwargs = model.received_calls[0]
+            self.assertEqual(len(received_args), 1)
+            self.assertEqual(received_kwargs, {})
+            self.assertIsInstance(received_args[0], torch.Tensor)
+            torch.testing.assert_close(received_args[0], expected_batch[0])
+            for metadata_value in (
+                *participant_ids,
+                *source_filenames,
+                *candidate_metadata,
+            ):
+                self.assertFalse(
+                    any(argument is metadata_value for argument in received_args)
+                )
 
     def test_09_train_one_epoch_updates_weights_and_return_types(self) -> None:
         """Test 9: Verify train_one_epoch updates parameters and returns properly typed metrics."""

@@ -246,7 +246,34 @@ def get_environment_metadata() -> Dict[str, Any]:
     }
 
 
-def compute_loss(logits: Tensor, targets: Tensor) -> Tensor:
+def calculate_class_weights(training_labels: Tensor) -> Tensor:
+    """Calculate balanced class weights using training labels only."""
+    if torch is None:
+        raise ImportError(_TORCH_MISSING_MSG)
+    if not isinstance(training_labels, torch.Tensor):
+        raise TypeError("training_labels must be a torch.Tensor")
+    if training_labels.ndim != 1 or training_labels.numel() == 0:
+        raise ValueError("training_labels must be a non-empty one-dimensional tensor")
+    if training_labels.dtype not in (torch.int32, torch.int64, torch.long):
+        raise ValueError("training_labels must have an integer dtype")
+    if (training_labels < 0).any() or (training_labels >= NUM_CLASSES).any():
+        raise ValueError(f"training_labels must contain class indices in [0, {NUM_CLASSES - 1}]")
+
+    counts = torch.bincount(
+        training_labels.to(dtype=torch.long), minlength=NUM_CLASSES
+    )
+    if (counts == 0).any():
+        raise ValueError("training_labels must contain every model class")
+    return training_labels.numel() / (
+        NUM_CLASSES * counts.to(dtype=torch.float32)
+    )
+
+
+def compute_loss(
+    logits: Tensor,
+    targets: Tensor,
+    class_weights: Optional[Tensor] = None,
+) -> Tensor:
     """Compute CrossEntropyLoss from raw logits (B, 3) and integer targets (B,).
 
     Args:
@@ -288,7 +315,17 @@ def compute_loss(logits: Tensor, targets: Tensor) -> Tensor:
             f"got min={targets.min().item()}, max={targets.max().item()}"
         )
 
-    criterion = nn.CrossEntropyLoss(reduction="mean")
+    loss_weights = None
+    if class_weights is not None:
+        if not isinstance(class_weights, torch.Tensor):
+            raise TypeError("class_weights must be a torch.Tensor")
+        if class_weights.ndim != 1 or class_weights.shape[0] != NUM_CLASSES:
+            raise ValueError(f"class_weights must have shape ({NUM_CLASSES},)")
+        if not torch.isfinite(class_weights).all() or (class_weights <= 0).any():
+            raise ValueError("class_weights must contain finite positive values")
+        loss_weights = class_weights.to(device=logits.device, dtype=logits.dtype)
+
+    criterion = nn.CrossEntropyLoss(weight=loss_weights, reduction="mean")
     loss = criterion(logits, targets)
 
     if not torch.isfinite(loss):
@@ -342,6 +379,7 @@ def train_one_epoch(
     optimizer: Any,
     device: Optional[Any] = None,
     grad_clip_norm: Optional[float] = None,
+    class_weights: Optional[Tensor] = None,
 ) -> EpochMetrics:
     """Execute one training epoch over (signals, targets) batches."""
     if torch is None:
@@ -370,7 +408,7 @@ def train_one_epoch(
 
         optimizer.zero_grad(set_to_none=True)
         logits = model(signals)
-        loss = compute_loss(logits, targets)
+        loss = compute_loss(logits, targets, class_weights=class_weights)
 
         loss.backward()
 

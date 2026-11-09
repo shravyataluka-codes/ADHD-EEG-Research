@@ -381,6 +381,51 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+class FoldLocalStandardizer:
+    """Fit per-channel standardization on training trials, then transform signals."""
+
+    def __init__(self) -> None:
+        self.mean_: np.ndarray | None = None
+        self.scale_: np.ndarray | None = None
+
+    @staticmethod
+    def _validated_signals(signals: np.ndarray, name: str) -> np.ndarray:
+        values = np.asarray(signals)
+        if values.ndim != 3 or any(size == 0 for size in values.shape):
+            raise ValueError(f"{name} must have non-empty shape (trials, time, channels)")
+        if not np.issubdtype(values.dtype, np.number) or np.iscomplexobj(values):
+            raise TypeError(f"{name} must contain real numeric values")
+        if not np.isfinite(values).all():
+            raise ValueError(f"{name} must contain only finite values")
+        return values
+
+    def fit(self, training_signals: np.ndarray) -> FoldLocalStandardizer:
+        """Fit channel-wise mean and scale from training signals exactly once."""
+        if self.mean_ is not None:
+            raise RuntimeError("FoldLocalStandardizer is already fitted")
+        values = self._validated_signals(training_signals, "training_signals")
+        mean = values.mean(axis=(0, 1), dtype=np.float64)
+        scale = values.std(axis=(0, 1), dtype=np.float64)
+        scale[scale == 0] = 1.0
+        mean.setflags(write=False)
+        scale.setflags(write=False)
+        self.mean_ = mean
+        self.scale_ = scale
+        return self
+
+    def transform(self, signals: np.ndarray) -> np.ndarray:
+        """Transform signals with fitted training parameters without refitting."""
+        if self.mean_ is None or self.scale_ is None:
+            raise RuntimeError("FoldLocalStandardizer must be fitted before transform")
+        values = self._validated_signals(signals, "signals")
+        if values.shape[2] != self.mean_.shape[0]:
+            raise ValueError(
+                f"signals must have {self.mean_.shape[0]} channels, got {values.shape[2]}"
+            )
+        dtype = np.result_type(values.dtype, np.float32)
+        return ((values - self.mean_) / self.scale_).astype(dtype, copy=False)
+
+
 def _statistics(trial: np.ndarray) -> dict[str, float]:
     values = trial.astype(np.float64, copy=False)
     return {

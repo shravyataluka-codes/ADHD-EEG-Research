@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from adhd_eeg.preprocessing import (
     CandidateParticipantICAReview,
+    FoldLocalStandardizer,
     FilterSettings,
     ICASettings,
     PreprocessingConfig,
@@ -324,6 +325,55 @@ class EEGPreprocessingTests(unittest.TestCase):
         self.assertIn("2 candidate participant groups", output.getvalue())
         self.assertIn("not verified identities", output.getvalue())
         self.assertNotIn("subjects", output.getvalue())
+
+
+class FoldLocalStandardizerTests(unittest.TestCase):
+    def test_fit_uses_training_only_and_transform_does_not_refit(self):
+        training = np.array(
+            [
+                [[0.0, 7.0], [2.0, 7.0]],
+                [[4.0, 7.0], [6.0, 7.0]],
+            ],
+            dtype=np.float32,
+        )
+        validation = np.full((1, 2, 2), 100.0, dtype=np.float32)
+        test = np.full((1, 2, 2), -100.0, dtype=np.float32)
+
+        first = FoldLocalStandardizer().fit(training)
+        first_mean = first.mean_.copy()
+        first_scale = first.scale_.copy()
+        validation_transformed = first.transform(validation)
+        test_transformed = first.transform(test)
+
+        changed_held_out = FoldLocalStandardizer().fit(training)
+        changed_held_out.transform(-validation)
+        changed_held_out.transform(-test)
+
+        np.testing.assert_array_equal(changed_held_out.mean_, first_mean)
+        np.testing.assert_array_equal(changed_held_out.scale_, first_scale)
+        np.testing.assert_allclose(
+            validation_transformed,
+            (validation - first_mean) / first_scale,
+        )
+        np.testing.assert_allclose(test_transformed, (test - first_mean) / first_scale)
+        np.testing.assert_array_equal(first.mean_, first_mean)
+        np.testing.assert_array_equal(first.scale_, first_scale)
+        self.assertEqual(first.scale_[1], 1.0)
+        with self.assertRaisesRegex(RuntimeError, "already fitted"):
+            first.fit(validation)
+
+    def test_requires_valid_training_data_and_fitted_transformer(self):
+        standardizer = FoldLocalStandardizer()
+        with self.assertRaisesRegex(RuntimeError, "must be fitted"):
+            standardizer.transform(np.zeros((1, 2, 1)))
+        with self.assertRaises(ValueError):
+            standardizer.fit(np.zeros((2, 2)))
+        with self.assertRaises(ValueError):
+            standardizer.fit(np.array([[[np.nan]]]))
+
+        standardizer.fit(np.zeros((1, 2, 1)))
+        with self.assertRaisesRegex(ValueError, "channels"):
+            standardizer.transform(np.zeros((1, 2, 2)))
 
 
 if __name__ == "__main__":
