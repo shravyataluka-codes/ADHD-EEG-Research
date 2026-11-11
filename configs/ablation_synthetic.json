@@ -1,0 +1,35 @@
+{
+  "_comment": "Synthetic engineering validation only; not an ADHD experiment or performance claim.",
+  "protocol_purpose": "SYNTHETIC_SMOKE_TEST_ONLY",
+  "variants": [
+    "conformer_reference",
+    "conformer_no_attention",
+    "conformer_no_conv",
+    "conformer_mean_pool",
+    "eegnet"
+  ],
+  "participants_per_class": 5,
+  "trials_per_participant": 2,
+  "training": {
+    "protocol_purpose": "SYNTHETIC_SMOKE_TEST_ONLY",
+    "seed": 42,
+    "batch_size": 4,
+    "max_epochs": 3,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "grad_clip_norm": 1.0,
+    "early_stopping_patience": 3,
+    "early_stopping_min_delta": 0.0001,
+    "checkpoint_metric": "val_loss",
+    "lr_scheduler_type": null,
+    "lr_step_size": 5,
+    "lr_gamma": 0.5,
+    "lr_min": 1e-06,
+    "device": "cpu"
+  }
+}

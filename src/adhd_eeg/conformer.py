@@ -295,10 +295,11 @@ if torch is not None:
 
         Structure:
         1. Pre-norm FFN 1 with residual scale 0.5.
-        2. Pre-norm Multi-Head Self-Attention with residual.
-        3. Pre-norm Convolution Module with residual.
+        2. Optional pre-norm Multi-Head Self-Attention with residual.
+        3. Optional pre-norm Convolution Module with residual.
         4. Pre-norm FFN 2 with residual scale 0.5.
-        5. Final LayerNorm(64).
+        5. Final LayerNorm(64). Optional modules are disabled only by their
+           corresponding single-component Sprint 7 ablation.
         """
 
         def __init__(
@@ -308,21 +309,35 @@ if torch is not None:
             num_heads: int = NUM_HEADS,
             conv_kernel_size: int = CONV_KERNEL_SIZE,
             dropout: float = DEFAULT_DROPOUT,
+            use_self_attention: bool = True,
+            use_conv_module: bool = True,
         ) -> None:
             super().__init__()
+            if not isinstance(use_self_attention, bool):
+                raise TypeError("use_self_attention must be a bool")
+            if not isinstance(use_conv_module, bool):
+                raise TypeError("use_conv_module must be a bool")
             self.ffn1 = ConformerFeedForward(d_model=d_model, ffn_dim=ffn_dim, dropout=dropout)
-            self.attn = ConformerSelfAttention(d_model=d_model, num_heads=num_heads, dropout=dropout)
-            self.conv = ConformerConvModule(d_model=d_model, kernel_size=conv_kernel_size, dropout=dropout)
+            self.attn = (
+                ConformerSelfAttention(d_model=d_model, num_heads=num_heads, dropout=dropout)
+                if use_self_attention
+                else None
+            )
+            self.conv = (
+                ConformerConvModule(d_model=d_model, kernel_size=conv_kernel_size, dropout=dropout)
+                if use_conv_module
+                else None
+            )
             self.ffn2 = ConformerFeedForward(d_model=d_model, ffn_dim=ffn_dim, dropout=dropout)
             self.final_norm = nn.LayerNorm(d_model)
 
         def forward(self, x: Tensor) -> Tensor:
             # 1. FFN 1 (residual scale 0.5)
             x = x + 0.5 * self.ffn1(x)
-            # 2. Self-Attention (residual scale 1.0)
-            x = x + self.attn(x)
-            # 3. Convolution Module (residual scale 1.0)
-            x = x + self.conv(x)
+            if self.attn is not None:
+                x = x + self.attn(x)
+            if self.conv is not None:
+                x = x + self.conv(x)
             # 4. FFN 2 (residual scale 0.5)
             x = x + 0.5 * self.ffn2(x)
             # 5. Final LayerNorm
@@ -353,8 +368,14 @@ if torch is not None:
             conv_kernel_size: int = CONV_KERNEL_SIZE,
             num_blocks: int = NUM_BLOCKS,
             dropout: float = DEFAULT_DROPOUT,
+            use_self_attention: bool = True,
+            use_conv_module: bool = True,
         ) -> None:
             super().__init__()
+            if not isinstance(use_self_attention, bool):
+                raise TypeError("use_self_attention must be a bool")
+            if not isinstance(use_conv_module, bool):
+                raise TypeError("use_conv_module must be a bool")
             self.expected_time_steps = expected_time_steps
             self.expected_channels = expected_channels
             self.token_time_steps = token_time_steps
@@ -382,6 +403,8 @@ if torch is not None:
                         num_heads=num_heads,
                         conv_kernel_size=conv_kernel_size,
                         dropout=dropout,
+                        use_self_attention=use_self_attention,
+                        use_conv_module=use_conv_module,
                     )
                     for _ in range(num_blocks)
                 ]
