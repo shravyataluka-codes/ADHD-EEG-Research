@@ -1,0 +1,156 @@
+# Dataset Documentation
+
+## 1. Dataset Information
+
+**Dataset Name:** A Dataset of EEG Signals from Adults with ADHD and Healthy Controls: Resting State, Cognitive Function, and Sound Listening Paradigm
+
+**Source:** Mendeley Data  
+**DOI:** https://doi.org/10.17632/6k4g25fhzg.1  
+**Dataset Link:** https://data.mendeley.com/datasets/6k4g25fhzg/1  
+**Direct Download:** https://data.mendeley.com/public-api/zip/6k4g25fhzg/download/1  
+**Published:** 3 April 2023  
+**License:** CC BY 4.0  
+**Institution:** Imam Reza University
+
+## 2. Dataset Overview
+
+This dataset contains EEG recordings collected from 79 adult participants:
+
+| Class | Number of Subjects |
+|---|---:|
+| Healthy Controls (HC) | 42 |
+| ADHD | 37 |
+| **Total** | **79** |
+
+- Age range: 20–68 years
+- Gender distribution: 56 male and 23 female
+- Sampling frequency: 256 Hz
+- EEG channels: O1, F3, F4, Cz and Fz
+- File format: MATLAB (.mat)
+
+## 3. Recording Conditions
+
+EEG signals were recorded under four different conditions:
+
+1. Resting state with eyes open.
+2. Resting state with eyes closed.
+3. Cognitive challenge.
+4. Sound listening (Omni harmonic).
+
+## 4. Dataset File Structure
+
+The downloaded dataset contains four MATLAB files:
+
+| File Name | Description |
+|---|---|
+| FC.mat | Female Healthy Controls |
+| MC.mat | Male Healthy Controls |
+| FADHD.mat | Female ADHD |
+| MADHD.mat | Male ADHD |
+
+Each file contains 11 cells corresponding to different recording conditions and channel combinations.
+
+## 5. Recording Details
+
+| Cell | Recording Condition | EEG Channels | Duration |
+|---|---|---|---|
+| 1 | Eyes open baseline | Cz, F4 | 30 sec |
+| 2 | Eyes closed | Cz, F4 | 20 sec |
+| 3 | Eyes open | Cz, F4 | 20 sec |
+| 4 | Cognitive challenge | Cz, F4 | 45 sec |
+| 5 | Pre-Omni harmonic baseline | Cz, F4 | 15 sec |
+| 6 | Omni harmonic assessment | Cz, F4 | 30 sec |
+| 7 | Eyes open baseline | O1, F4 | 30 sec |
+| 8 | Eyes closed | O1, F4 | 30 sec |
+| 9 | Eyes open | O1, F4 | 30 sec |
+| 10 | Eyes closed | F3, F4 | 45 sec |
+| 11 | Eyes closed | Fz, F4 | 45 sec |
+
+## 6. Data Shape
+
+An example cell has the following shape:
+
+`13 × 7680 × 2`
+
+Where:
+- 13 represents the number of subjects in that cell.
+- 7680 represents the number of EEG samples (30 seconds × 256 Hz).
+- 2 represents the number of EEG channels.
+
+Actual dimensions may vary depending on the recording condition and number of subjects.
+
+## 7. Important Dataset Note
+
+The EEG signal of subject number 7 in the female ADHD group is reported as corrupted.
+
+This subject must be identified and handled carefully during data inspection and preprocessing.
+
+## 8. Research Objective
+
+**Proposed Research:** Subject-Independent Binary Classification of ADHD Using Multi-Paradigm EEG Signals.
+
+The objective is to investigate whether EEG signals recorded under different conditions can distinguish adults with ADHD from healthy controls.
+
+### Classification Classes
+
+- Class 0: Healthy Controls (HC)
+- Class 1: ADHD
+
+**Important:** This dataset contains only two diagnostic groups. It does not provide separate ADHD-Inattentive (ADHD-I) and ADHD-Combined (ADHD-C) labels. Therefore, three-class classification is not possible using the provided labels alone.
+
+## 9. Proposed Methodology
+
+1. Load and inspect the four `.mat` files.
+2. Extract EEG signals and subject-level labels.
+3. Identify and handle corrupted recordings.
+4. Perform EEG preprocessing.
+5. Segment signals into suitable epochs.
+6. Extract meaningful EEG features or use a deep learning model.
+7. Train an EEG classification model.
+8. Evaluate using subject-wise cross-validation.
+
+### Model
+
+Proposed initial model: EEGNet.
+
+### Evaluation Strategy
+
+Use **StratifiedGroupKFold** with subject IDs as groups.
+
+Important rules:
+- All recordings belonging to one subject must remain in the same fold.
+- No subject can appear in both training and testing sets.
+- Fit normalization, feature selection and other learned preprocessing steps using training data only.
+
+### Evaluation Metrics
+
+- Accuracy
+- Precision
+- Recall
+- Macro F1-score
+- Sensitivity
+- Specificity
+- Confusion Matrix
+
+## 10. Important Research Considerations
+
+- Avoid random epoch-wise splitting because it can cause subject-level data leakage.
+- Preserve subject IDs throughout preprocessing.
+- Maintain the original class labels.
+- Handle class imbalance appropriately.
+- Compare the model against a simple baseline.
+- Report subject-independent performance rather than claiming clinical diagnostic capability.
+
+## 11. Current Project Status
+
+- [x] Dataset selected
+- [x] GitHub branch created: `adhd-eeg-classification`
+- [x] Dataset documentation file created
+- [x] Download dataset
+- [ ] Inspect MATLAB files
+- [ ] Understand subject IDs and label mapping
+- [ ] Build preprocessing pipeline
+- [ ] Implement subject-wise splitting
+- [ ] Train baseline model
+- [ ] Train EEGNet
+- [ ] Evaluate and document results
