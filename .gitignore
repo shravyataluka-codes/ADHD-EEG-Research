@@ -4,3 +4,46 @@ dataset/
 #Python execution artifacts
 __pycache__/
 *.py[cod]
+# Virtual environments
+.venv/
+.venv*/
+venv/
+
+# Python caches and test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Next.js and Node generated files
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Raw EEG data and locally generated datasets
+Dataset files/
+processed/
+*.mat
+FC_cell01_slot001.csv
+
+# Temporary files
+.DS_Store
+Thumbs.db
+
+# Large generated audit correspondence file
+reports/participant_identity_audit/recording_correspondence.csv
+
+# Generated validation artifacts
+web/.tsupgrader/

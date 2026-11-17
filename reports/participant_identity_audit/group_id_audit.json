@@ -1,0 +1,218 @@
+{
+  "source_code": "src/preprocessing.py: group_key = f'{filename}:slot-{storage_slot:03d}'.",
+  "condition_in_key": false,
+  "meaning": "Source filename plus one-based storage-slot index; not a person ID.",
+  "across_conditions": "Same filename/slot string is reused across processed conditions.",
+  "across_files": "Same slot number in different files produces a distinct key.",
+  "fold_logic": "src/epoching.py assigns each distinct key to one fold; src/modeling_data.py verifies the saved key-fold invariant only.",
+  "configuration_marks_ids_unverified": true,
+  "cell1_archive": {
+    "archive": "processed\\cell_01_epochs.npz",
+    "epochs": 553,
+    "unique_provisional_group_keys": 79,
+    "fold_ids": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "group_key_examples": [
+      "FADHD.mat:slot-001",
+      "FADHD.mat:slot-002",
+      "FADHD.mat:slot-003",
+      "FADHD.mat:slot-004",
+      "FADHD.mat:slot-005",
+      "FADHD.mat:slot-006",
+      "FADHD.mat:slot-008",
+      "FADHD.mat:slot-009"
+    ]
+  },
+  "processed_archives": [
+    {
+      "archive": "processed\\cell_01_epochs.npz",
+      "cell": 1,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_05_epochs.npz",
+      "cell": 5,
+      "epoch_count": 237,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 51,
+        "1": 51,
+        "2": 45,
+        "3": 45,
+        "4": 45
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_06_epochs.npz",
+      "cell": 6,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_07_epochs.npz",
+      "cell": 7,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_11_epochs.npz",
+      "cell": 11,
+      "epoch_count": 790,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 170,
+        "1": 170,
+        "2": 150,
+        "3": 150,
+        "4": 150
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    }
+  ],
+  "shared_key_fold_conflicts_across_archives": {},
+  "cross_file_person_overlap_detectable": false,
+  "row_order_across_conditions_verified": false,
+  "identity_data_missing": [
+    "Stable participant pseudonym for each row in every file and cell",
+    "Row-to-person crosswalk across conditions",
+    "Cross-file participant mapping or author-confirmed cohort disjointness",
+    "Mapping for corrupted/excluded FADHD slot and 80-versus-79 discrepancy"
+  ],
+  "verified_subjectwise_reliability": false
+}

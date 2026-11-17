@@ -1,0 +1,25 @@
+# Modeling input is restricted to the existing, separately processed Cell 1.
+dataset:
+  cell: 1
+  input: ../processed/cell_01_epochs.npz
+  expected_epoch_shape: [1024, 2]
+  combine_other_cells: false
+
+classes:
+  Control: 0
+  ADHD: 1
+
+folds:
+  count: 5
+  ids: [0, 1, 2, 3, 4]
+  random_seed: 42
+  use_existing_assignments: true
+
+grouping:
+  field: group_keys
+  identifier_type: provisional_file_slot
+  verified_participant_ids: false
+  note: >-
+    Group keys identify source filename and storage slot. They are provisional
+    file-slot identifiers, not verified participant IDs. Do not infer identity
+    correspondence across files or cells from these keys.

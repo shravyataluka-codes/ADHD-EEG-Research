@@ -1,0 +1,62 @@
+# Cell 1-only multimodal ablation. Existing baseline artifacts are read-only.
+seed: 42
+
+configs:
+  modeling_data: modeling_cell1.yaml
+  deep_models: deep_models_cell1.yaml
+
+data:
+  cell: 1
+  input: ../processed/cell_01_epochs.npz
+  handcrafted_feature_count: 40
+  group_keys_are_verified_participant_ids: false
+
+baseline:
+  run_directory: ../results/deep_learning/cell_01/full/run_20261115T090201955591Z
+  model_name: eeg_transformer
+  reuse_saved_group_splits: true
+
+inner_validation:
+  fraction: 0.2
+
+class_weighting:
+  enabled: true
+  imbalance_ratio_threshold: 1.1
+
+optimization:
+  batch_size: 16
+  maximum_epochs: 100
+  early_stopping_patience: 12
+  minimum_validation_improvement: 0.0
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  learning_rate_scheduler:
+    factor: 0.5
+    patience: 3
+    minimum_learning_rate: 0.000001
+
+fusion:
+  feature_count: 40
+  projection_dim: 16
+  classifier_hidden_dim: 16
+  dropout: 0.3
+  freeze_transformer_backbone: false
+  warm_start_from_fold_baseline: true
+
+handcrafted_baseline:
+  model: logistic_regression
+  C: 1.0
+  maximum_iterations: 1000
+  class_weighting_uses_training_fold: true
+  random_state: 42
+
+smoke_test:
+  groups_per_class_per_fold: 1
+  batch_size: 4
+  maximum_epochs: 1
+  early_stopping_patience: 1
+
+paths:
+  output_root: ../results/deep_learning/cell_01/feature_fusion
+  report: ../reports/deep_feature_fusion_report.md

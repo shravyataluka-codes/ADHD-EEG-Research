@@ -1,0 +1,12 @@
+[
+  {
+    "epoch": 1,
+    "training_loss": 0.5071859852798624,
+    "learning_rate": 0.001
+  },
+  {
+    "epoch": 2,
+    "training_loss": 0.25876467067808107,
+    "learning_rate": 0.001
+  }
+]

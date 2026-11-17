@@ -1,0 +1,1623 @@
+{
+  "title": "ADHD EEG Dataset Validation",
+  "sampling_rate_hz": 256,
+  "mapping_source": "https://data.mendeley.com/datasets/6k4g25fhzg/1",
+  "published_context": {
+    "participant_count": 79,
+    "quality_note": "The Mendeley record notes that female-ADHD subject number 7 has a corrupted EEG signal."
+  },
+  "published_mapping": [
+    {
+      "cell": 1,
+      "task": "Eyes open baseline",
+      "duration_seconds": 30
+    },
+    {
+      "cell": 2,
+      "task": "Eyes closed",
+      "duration_seconds": 20
+    },
+    {
+      "cell": 3,
+      "task": "Eyes open",
+      "duration_seconds": 20
+    },
+    {
+      "cell": 4,
+      "task": "Cognitive Challenge",
+      "duration_seconds": 45
+    },
+    {
+      "cell": 5,
+      "task": "Pre-Omni harmonic baseline",
+      "duration_seconds": 15
+    },
+    {
+      "cell": 6,
+      "task": "Omni harmonic assessment",
+      "duration_seconds": 30
+    },
+    {
+      "cell": 7,
+      "task": "Eyes open baseline",
+      "duration_seconds": 30
+    },
+    {
+      "cell": 8,
+      "task": "Eyes closed",
+      "duration_seconds": 30
+    },
+    {
+      "cell": 9,
+      "task": "Eyes open",
+      "duration_seconds": 30
+    },
+    {
+      "cell": 10,
+      "task": "Eyes closed",
+      "duration_seconds": 45
+    },
+    {
+      "cell": 11,
+      "task": "Eyes closed",
+      "duration_seconds": 45
+    }
+  ],
+  "duplicate_pairs_checked": [
+    [
+      2,
+      8
+    ],
+    [
+      3,
+      9
+    ],
+    [
+      4,
+      10
+    ]
+  ],
+  "participant_matching": {
+    "verified": false,
+    "basis": "The four MAT files expose the signal cell-array variable only and no participant-ID or linkage variable. Equal slot counts are not proof of participant identity or index alignment."
+  },
+  "files": [
+    {
+      "file": "FC.mat",
+      "group_label": "female control",
+      "path": "C:\\Users\\jyoth\\Downloads\\ADHD-HC mendeley dataset\\Dataset files\\FC.mat",
+      "status": "complete",
+      "variable_name": "FC",
+      "top_level_variable_names": [
+        "FC"
+      ],
+      "loader": "scipy.io.loadmat",
+      "participant_slots_per_condition": [
+        13,
+        13,
+        13,
+        13,
+        13,
+        13,
+        13,
+        13,
+        13,
+        13,
+        13
+      ],
+      "conditions": [
+        {
+          "cell": 1,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            13,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 2,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 20,
+          "shape": [
+            13,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 3,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 20,
+          "shape": [
+            13,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 4,
+          "published_task": "Cognitive Challenge",
+          "published_duration_seconds": 45,
+          "shape": [
+            13,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 5,
+          "published_task": "Pre-Omni harmonic baseline",
+          "published_duration_seconds": 15,
+          "shape": [
+            13,
+            3840,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 3840,
+          "channel_count": 2,
+          "calculated_duration_seconds": 15.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 6,
+          "published_task": "Omni harmonic assessment",
+          "published_duration_seconds": 30,
+          "shape": [
+            13,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 7,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            13,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 8,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 30,
+          "shape": [
+            13,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 9,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 30,
+          "shape": [
+            13,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 10,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            13,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 11,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            13,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 13,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        }
+      ],
+      "duplicate_checks": [
+        {
+          "cells": [
+            2,
+            8
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            3,
+            9
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            4,
+            10
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        }
+      ],
+      "error": null
+    },
+    {
+      "file": "MC.mat",
+      "group_label": "male control",
+      "path": "C:\\Users\\jyoth\\Downloads\\ADHD-HC mendeley dataset\\Dataset files\\MC.mat",
+      "status": "complete",
+      "variable_name": "MC",
+      "top_level_variable_names": [
+        "MC"
+      ],
+      "loader": "scipy.io.loadmat",
+      "participant_slots_per_condition": [
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29
+      ],
+      "conditions": [
+        {
+          "cell": 1,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            29,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 2,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 20,
+          "shape": [
+            29,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 3,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 20,
+          "shape": [
+            29,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 4,
+          "published_task": "Cognitive Challenge",
+          "published_duration_seconds": 45,
+          "shape": [
+            29,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 5,
+          "published_task": "Pre-Omni harmonic baseline",
+          "published_duration_seconds": 15,
+          "shape": [
+            29,
+            3840,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 3840,
+          "channel_count": 2,
+          "calculated_duration_seconds": 15.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 6,
+          "published_task": "Omni harmonic assessment",
+          "published_duration_seconds": 30,
+          "shape": [
+            29,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 7,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            29,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 8,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 30,
+          "shape": [
+            29,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 9,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 30,
+          "shape": [
+            29,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 10,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            29,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 11,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            29,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 29,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        }
+      ],
+      "duplicate_checks": [
+        {
+          "cells": [
+            2,
+            8
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            3,
+            9
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            4,
+            10
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        }
+      ],
+      "error": null
+    },
+    {
+      "file": "FADHD.mat",
+      "group_label": "female ADHD",
+      "path": "C:\\Users\\jyoth\\Downloads\\ADHD-HC mendeley dataset\\Dataset files\\FADHD.mat",
+      "status": "complete",
+      "variable_name": "FADHD",
+      "top_level_variable_names": [
+        "FADHD"
+      ],
+      "loader": "scipy.io.loadmat",
+      "participant_slots_per_condition": [
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11,
+        11
+      ],
+      "conditions": [
+        {
+          "cell": 1,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            11,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 2,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 20,
+          "shape": [
+            11,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 3,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 20,
+          "shape": [
+            11,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 4,
+          "published_task": "Cognitive Challenge",
+          "published_duration_seconds": 45,
+          "shape": [
+            11,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 5,
+          "published_task": "Pre-Omni harmonic baseline",
+          "published_duration_seconds": 15,
+          "shape": [
+            11,
+            3840,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 3840,
+          "channel_count": 2,
+          "calculated_duration_seconds": 15.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 6,
+          "published_task": "Omni harmonic assessment",
+          "published_duration_seconds": 30,
+          "shape": [
+            11,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 7,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            11,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 8,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 30,
+          "shape": [
+            11,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 9,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 30,
+          "shape": [
+            11,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 10,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            11,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        },
+        {
+          "cell": 11,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            11,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 11,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 1,
+          "zero_variance_channel_recordings": 1,
+          "flatline_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "zero_variance_trace_slots": [
+            {
+              "participant_slot": 7,
+              "channel_slot": 2
+            }
+          ],
+          "quality_check_note": null
+        }
+      ],
+      "duplicate_checks": [
+        {
+          "cells": [
+            2,
+            8
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            3,
+            9
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            4,
+            10
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        }
+      ],
+      "error": null
+    },
+    {
+      "file": "MADHD.mat",
+      "group_label": "male ADHD",
+      "path": "C:\\Users\\jyoth\\Downloads\\ADHD-HC mendeley dataset\\Dataset files\\MADHD.mat",
+      "status": "complete",
+      "variable_name": "MADHD",
+      "top_level_variable_names": [
+        "MADHD"
+      ],
+      "loader": "scipy.io.loadmat",
+      "participant_slots_per_condition": [
+        27,
+        27,
+        27,
+        27,
+        27,
+        27,
+        27,
+        27,
+        27,
+        27,
+        27
+      ],
+      "conditions": [
+        {
+          "cell": 1,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            27,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 2,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 20,
+          "shape": [
+            27,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 3,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 20,
+          "shape": [
+            27,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 4,
+          "published_task": "Cognitive Challenge",
+          "published_duration_seconds": 45,
+          "shape": [
+            27,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 5,
+          "published_task": "Pre-Omni harmonic baseline",
+          "published_duration_seconds": 15,
+          "shape": [
+            27,
+            3840,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 3840,
+          "channel_count": 2,
+          "calculated_duration_seconds": 15.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 6,
+          "published_task": "Omni harmonic assessment",
+          "published_duration_seconds": 30,
+          "shape": [
+            27,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 7,
+          "published_task": "Eyes open baseline",
+          "published_duration_seconds": 30,
+          "shape": [
+            27,
+            7680,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 7680,
+          "channel_count": 2,
+          "calculated_duration_seconds": 30.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 8,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 30,
+          "shape": [
+            27,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 9,
+          "published_task": "Eyes open",
+          "published_duration_seconds": 30,
+          "shape": [
+            27,
+            5120,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 5120,
+          "channel_count": 2,
+          "calculated_duration_seconds": 20.0,
+          "duration_matches_published_mapping": false,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 10,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            27,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        },
+        {
+          "cell": 11,
+          "published_task": "Eyes closed",
+          "published_duration_seconds": 45,
+          "shape": [
+            27,
+            11520,
+            2
+          ],
+          "dimensions": 3,
+          "dtype": "float64",
+          "structure_supports_subjects_samples_two_channels": true,
+          "participant_slots": 27,
+          "sample_count": 11520,
+          "channel_count": 2,
+          "calculated_duration_seconds": 45.0,
+          "duration_matches_published_mapping": true,
+          "nan_count": 0,
+          "positive_infinity_count": 0,
+          "negative_infinity_count": 0,
+          "nonfinite_channel_recordings": 0,
+          "flatline_channel_recordings": 0,
+          "zero_variance_channel_recordings": 0,
+          "flatline_trace_slots": [],
+          "zero_variance_trace_slots": [],
+          "quality_check_note": null
+        }
+      ],
+      "duplicate_checks": [
+        {
+          "cells": [
+            2,
+            8
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            3,
+            9
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        },
+        {
+          "cells": [
+            4,
+            10
+          ],
+          "shape_comparison": "same",
+          "exact_array_match": true,
+          "comparison_note": "Exact value comparison of complete arrays; NaN values do not count as equal. No participant-slot alignment is implied."
+        }
+      ],
+      "error": null
+    }
+  ],
+  "summary": {
+    "all_four_files_loaded": true,
+    "all_conditions_support_subjects_samples_two_channels": true,
+    "all_calculated_durations_match_published_mapping": false,
+    "nonfinite_sample_count": 0,
+    "flatline_channel_recordings": 11,
+    "zero_variance_channel_recordings": 11,
+    "stored_participant_slot_total": 80,
+    "participant_index_linkage": "The MAT files expose the signal cell-array variables only; no participant-ID or linkage variable was found. Equal slot counts across conditions do not establish that row indices identify the same person. Cross-file participant matching is therefore not verified.",
+    "participant_linkage_verified": false,
+    "quality_flags": {
+      "duration_mapping_mismatches": 8,
+      "exact_duplicate_condition_pairs": 12
+    }
+  }
+}

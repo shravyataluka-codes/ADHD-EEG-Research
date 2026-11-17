@@ -1,0 +1,59 @@
+# Compact raw-EEG architectures for Cell 1 only.
+seed: 42
+
+data:
+  cell: 1
+  input: ../processed/cell_01_epochs.npz
+  input_channels: 2
+  input_samples: 1024
+  sampling_rate_hz: 256
+  input_representation: raw_epochs
+  use_handcrafted_features_as_model_input: false
+  classes:
+    Control: 0
+    ADHD: 1
+  group_keys_are_verified_participant_ids: false
+  use_existing_fold_assignments: true
+
+optimization_defaults:
+  batch_size: 16
+  maximum_epochs: 100
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+
+models:
+  eegnet:
+    temporal_filters: 8
+    depth_multiplier: 2
+    separable_filters: 16
+    temporal_kernel_size: 63
+    dropout: 0.25
+
+  cnn_lstm:
+    conv_channels: [16, 32]
+    conv_kernel_sizes: [7, 5]
+    hidden_size: 24
+    bidirectional: true
+    projection_dim: 32
+    dropout: 0.25
+
+  eeg_transformer:
+    embed_dim: 32
+    num_heads: 4
+    num_layers: 2
+    feedforward_dim: 64
+    token_kernel_size: 16
+    token_stride: 8
+    dropout: 0.2
+
+  eeg_conformer:
+    temporal_filters: 8
+    temporal_kernel_size: 25
+    spatial_filters: 16
+    pool_size: 8
+    embed_dim: 32
+    num_heads: 4
+    num_layers: 1
+    feedforward_dim: 64
+    dropout: 0.2

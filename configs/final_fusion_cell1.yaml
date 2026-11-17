@@ -1,0 +1,16 @@
+# Full-data final fit; validation is used only to select the training duration.
+seed: 42
+expected_epoch_count: 553
+validation:
+  fraction: 0.2
+  strategy: stratified_group_holdout
+  seed: 42
+
+configs:
+  modeling_data: modeling_cell1.yaml
+  deep_models: deep_models_cell1.yaml
+  fusion_training: deep_fusion_cell1.yaml
+  preprocessing: preprocessing.yaml
+
+paths:
+  output_root: ../results/deep_learning/cell_01/final_fusion

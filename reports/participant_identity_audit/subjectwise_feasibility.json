@@ -1,0 +1,42 @@
+{
+  "A_explicit_verified_identity": {
+    "available": false,
+    "evidence": "No participant ID, pseudonym, or row-to-person linkage variable was found in the MAT files or local metadata."
+  },
+  "B_strong_signal_candidates": {
+    "confirmed_signal_reuse_pairs": 800,
+    "whole_array_exact_pairs": 240,
+    "exact_shared_prefix_pairs": 560,
+    "nonexact_near_duplicate_candidates": 0,
+    "screening_threshold_for_nonexact_candidates": "Non-exact, same-length pair; each channel max-absolute lagged NCC >=0.98; mean relative PSD cosine >=0.98.",
+    "identity_verified": false
+  },
+  "C_weak_similarity_candidates": {
+    "count": 102923,
+    "identity_verified": false
+  },
+  "D_unknown_relationships": {
+    "recording_instances": 880,
+    "cross-cell_and_cross-file_identity_links_unknown": true
+  },
+  "exact_duplicate_pairs": 240,
+  "exact_shared_prefix_pairs": 560,
+  "cross_file_exact_duplicate_groups": 0,
+  "cross_file_same_slot_pair_comparisons": 10406,
+  "cross_file_same_slot_exact_signal_segment_matches": 0,
+  "cross_file_same_slot_weak_similarity_flags": 2841,
+  "cross_file_all_pair_comparisons": 274670,
+  "cross_file_weak_similarity_flags": 56081,
+  "within_file_same_slot_cross_condition_comparisons": 4400,
+  "within_file_same_slot_exact_full_matches": 240,
+  "within_file_same_slot_exact_prefix_matches": 560,
+  "subjectwise_five_fold_cv_possible": false,
+  "reason": "Without explicit IDs and a complete row-to-person crosswalk, the same person under different file/slot keys cannot be found or grouped.",
+  "author_evidence_required": [
+    "Stable pseudonymous ID for every recording row in every file/cell",
+    "Documented row-order/cross-condition mapping and missing/reordered cases",
+    "Cross-file overlap mapping or verified mutually exclusive cohorts",
+    "Reconciliation of 80 slots with 79 published participants, naming the corrupted-recording ID",
+    "Author explanation for exact condition copies 2/8, 3/9, and 4/10"
+  ]
+}

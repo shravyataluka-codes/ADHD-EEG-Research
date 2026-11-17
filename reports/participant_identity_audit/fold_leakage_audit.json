@@ -1,0 +1,210 @@
+{
+  "scope": "Read-only exact-signal duplicate audit and saved processed-fold verification; no labels used to infer identity.",
+  "processed_archives": [
+    {
+      "archive": "processed\\cell_01_epochs.npz",
+      "cell": 1,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_05_epochs.npz",
+      "cell": 5,
+      "epoch_count": 237,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 51,
+        "1": 51,
+        "2": 45,
+        "3": 45,
+        "4": 45
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_06_epochs.npz",
+      "cell": 6,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_07_epochs.npz",
+      "cell": 7,
+      "epoch_count": 553,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 119,
+        "1": 119,
+        "2": 105,
+        "3": 105,
+        "4": 105
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    },
+    {
+      "archive": "processed\\cell_11_epochs.npz",
+      "cell": 11,
+      "epoch_count": 790,
+      "unique_provisional_groups": 79,
+      "fold_ids": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "epoch_count_per_fold": {
+        "0": 170,
+        "1": 170,
+        "2": 150,
+        "3": 150,
+        "4": 150
+      },
+      "group_count_per_fold": {
+        "0": 17,
+        "1": 17,
+        "2": 15,
+        "3": 15,
+        "4": 15
+      },
+      "groups_crossing_folds": {},
+      "all_groups_in_one_fold": true,
+      "example_group_keys": [
+        "FADHD.mat:slot-001",
+        "FADHD.mat:slot-002",
+        "FADHD.mat:slot-003",
+        "FADHD.mat:slot-004"
+      ]
+    }
+  ],
+  "all_saved_group_keys_single_fold": true,
+  "group_keys_with_inconsistent_fold_across_archives": {},
+  "identical_processed_epoch_hashes_crossing_folds": [],
+  "crossfold_exact_epoch_hash_count": 0,
+  "processed_exact_epoch_duplicate_groups_across_archives": 0,
+  "processed_exact_epoch_duplicate_pairs_across_archives": 0,
+  "processed_exact_epoch_duplicate_pairs_within_same_fold": 0,
+  "processed_exact_epoch_duplicate_pairs_crossing_folds": 0,
+  "processed_exact_epoch_duplicate_counts_by_archive_pair": {},
+  "processed_exact_epoch_duplicate_examples": [],
+  "raw_exact_recording_duplicate_pair_count": 240,
+  "raw_exact_duplicate_pairs_with_different_provisional_group_ids": 0,
+  "raw_exact_duplicate_pairs_with_same_provisional_group_id": 240,
+  "raw_exact_duplicate_pairs_with_both_cells_in_saved_archives": 0,
+  "raw_exact_shared_prefix_pair_count": 560,
+  "raw_exact_shared_prefix_pairs_with_different_provisional_group_ids": 0,
+  "raw_exact_shared_prefix_pairs_with_same_provisional_group_id": 560,
+  "raw_exact_shared_prefix_pairs_with_both_cells_in_saved_archives": 80,
+  "current_modelled_cell1_contains_condition_copy_pairs": false,
+  "cell_05_cell_11_aligned_processed_epoch_pairs": 237,
+  "cell_05_cell_11_aligned_processed_epoch_exact_matches": 0,
+  "cell_05_cell_11_aligned_pairs_same_fold": 237,
+  "cell_05_cell_11_aligned_pairs_crossing_folds": 0,
+  "cell_05_cell_11_aligned_pairs_median_pearson_channel_slot_1": 0.9999999948776555,
+  "cell_05_cell_11_aligned_pairs_median_pearson_channel_slot_2": 0.9999999950170672,
+  "cell_05_cell_11_aligned_pairs_minimum_pearson_channel_slot_1": 0.9873592891201504,
+  "cell_05_cell_11_aligned_pairs_minimum_pearson_channel_slot_2": 0.9969848115922327,
+  "cell_05_cell_11_aligned_pairs_median_max_absolute_difference": 0.00545634925886479,
+  "cell_05_cell_11_aligned_pairs_maximum_absolute_difference": 19.45272726514021,
+  "conclusion": "Whole-array copies 2/8, 3/9, and 4/10 and exact shared prefixes across seven additional condition pairs use the same filename:slot key within each file. The raw Cell 5/11 prefix copies produce 237 aligned processed epoch pairs with high correlations, but none are exactly equal; all aligned pairs have the same saved fold. No exact processed epoch hash crossed folds. This does not rule out one person under distinct keys."
+}

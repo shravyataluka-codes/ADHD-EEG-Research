@@ -1,0 +1,47 @@
+# Reproducible configuration for the requested initial preprocessing pass.
+sampling_rate_hz: 256
+
+filter:
+  family: butterworth
+  order: 4
+  low_cutoff_hz: 0.5
+  high_cutoff_hz: 40.0
+  zero_phase: true
+  implementation: sosfiltfilt
+
+notch_filter:
+  enabled: false
+  frequency_hz: null
+  rationale: "No diagnostic evidence currently justifies enabling a notch filter."
+
+edge_trim_seconds: 1
+epoch_duration_seconds: 4
+epoch_overlap_seconds: 0
+
+# Cells remain separate in the processed output.
+selected_cells:
+  - 1
+  - 5
+  - 6
+  - 7
+  - 11
+
+# One-based storage slot from the dataset validation; not a participant ID.
+excluded_storage_slots:
+  FADHD.mat:
+    - 7
+
+class_by_file:
+  FC.mat: Control
+  MC.mat: Control
+  FADHD.mat: ADHD
+  MADHD.mat: ADHD
+
+# Grouped folds are assigned independently within each cell. No model is trained.
+cv_folds: 5
+
+paths:
+  input_directory: ../Dataset files
+  output_directory: ../processed
+  report_markdown: ../reports/preprocessing_report.md
+  report_json: ../reports/preprocessing_results.json

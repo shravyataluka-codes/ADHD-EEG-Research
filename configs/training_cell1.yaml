@@ -1,0 +1,35 @@
+seed: 42
+
+configs:
+  modeling_data: modeling_cell1.yaml
+  deep_models: deep_models_cell1.yaml
+
+inner_validation:
+  fraction: 0.2
+
+class_weighting:
+  enabled: true
+  imbalance_ratio_threshold: 1.1
+
+optimization:
+  batch_size: 16
+  maximum_epochs: 100
+  early_stopping_patience: 12
+  minimum_validation_improvement: 0.0
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  learning_rate_scheduler:
+    factor: 0.5
+    patience: 3
+    minimum_learning_rate: 0.000001
+
+smoke_test:
+  groups_per_class_per_fold: 1
+  batch_size: 4
+  maximum_epochs: 1
+  early_stopping_patience: 1
+
+paths:
+  output_root: ../results/deep_learning/cell_01
+  full_report: ../reports/deep_learning_training_report.md
