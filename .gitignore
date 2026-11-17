@@ -47,3 +47,14 @@ reports/participant_identity_audit/recording_correspondence.csv
 
 # Generated validation artifacts
 web/.tsupgrader/
+
+# Local runtime and generated files
+api-server.log
+api-server-error.log
+tsconfig.tsbuildinfo
+next-env.d.ts
+web/api-openapi-check.json
+
+# Local source backups (preserve locally, do not commit)
+src_backup/
+web/src.zip
