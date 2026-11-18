@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowDown,
   ArrowRight,
   BrainCircuit,
   FileCheck2,
+  Lock,
   ScanLine,
   Sparkles,
+  UserCheck,
 } from "lucide-react";
 import { analyzeRecording } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { ResultsDashboard } from "@/components/results-dashboard";
-import { ResearchNotice } from "@/components/research-notice";
 import { SiteHeader } from "@/components/site-header";
 import { UploadPanel } from "@/components/upload-panel";
 import type { AnalysisResponse } from "@/lib/types";
@@ -48,6 +51,7 @@ const workflow = [
 ];
 
 export function ResearchApp() {
+  const { user, isAuthenticated } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [samplingRate, setSamplingRate] = useState(
     String(MODEL_SAMPLING_RATE_HZ),
@@ -130,6 +134,36 @@ export function ResearchApp() {
     <div className="min-h-screen">
       <SiteHeader />
       <main className="mx-auto w-full max-w-7xl px-5 pb-12 pt-8 sm:px-8 sm:pt-12">
+        {/* Auth status bar */}
+        {isAuthenticated && user ? (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-white/80 px-4 py-2.5 text-xs text-slate-600 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="grid size-5 place-items-center rounded-full bg-teal-100 text-teal-800">
+                <UserCheck size={12} />
+              </span>
+              <span>
+                Authenticated as <strong className="text-slate-900">{user.name}</strong> ({user.role})
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              Session Active · Secure Research Pipeline
+            </span>
+          </div>
+        ) : (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-2.5 text-xs text-amber-950 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Lock size={14} className="text-amber-700" />
+              <span>You are viewing in guest evaluation mode.</span>
+            </div>
+            <Link
+              href="/login"
+              className="font-semibold text-indigo-700 hover:text-indigo-900 underline"
+            >
+              Sign in with researcher credentials →
+            </Link>
+          </div>
+        )}
+
         <section className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-3 py-1.5 text-xs font-semibold text-indigo-800 shadow-sm">
@@ -220,10 +254,6 @@ export function ResearchApp() {
           </div>
         </section>
 
-        <section id="about" className="mt-8 scroll-mt-8">
-          <ResearchNotice />
-        </section>
-
         <div className="mt-8 grid gap-6 xl:grid-cols-[0.88fr_1.12fr] xl:items-start">
           <UploadPanel
             file={file}
@@ -270,11 +300,10 @@ export function ResearchApp() {
         )}
       </main>
       <footer className="border-t border-slate-200 bg-white/70">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
           <p className="text-xs leading-5 text-slate-500">
             Drushti Detect · Exploratory EEG research interface
           </p>
-          <ResearchNotice compact />
         </div>
       </footer>
     </div>

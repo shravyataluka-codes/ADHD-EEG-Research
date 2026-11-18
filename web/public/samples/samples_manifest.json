@@ -1,0 +1,54 @@
+[
+  {
+    "filename": "sample_female_control_HC.csv",
+    "description": "Female Healthy Control (HC - Subject 1)",
+    "ground_truth": "Control",
+    "source_file": "FC.mat",
+    "subject_index": 1,
+    "samples": 7680,
+    "channels": 2,
+    "sampling_rate_hz": 256,
+    "duration_seconds": 30.0,
+    "channel_1_std": 33.08652319736803,
+    "channel_2_std": 11.839770881806011
+  },
+  {
+    "filename": "sample_female_adhd.csv",
+    "description": "Female ADHD (Subject 1)",
+    "ground_truth": "ADHD",
+    "source_file": "FADHD.mat",
+    "subject_index": 1,
+    "samples": 7680,
+    "channels": 2,
+    "sampling_rate_hz": 256,
+    "duration_seconds": 30.0,
+    "channel_1_std": 20.81155119593834,
+    "channel_2_std": 13.545503813715586
+  },
+  {
+    "filename": "sample_male_control_HC.csv",
+    "description": "Male Healthy Control (HC - Subject 1)",
+    "ground_truth": "Control",
+    "source_file": "MC.mat",
+    "subject_index": 1,
+    "samples": 7680,
+    "channels": 2,
+    "sampling_rate_hz": 256,
+    "duration_seconds": 30.0,
+    "channel_1_std": 9.572567659558219,
+    "channel_2_std": 6.23989697022485
+  },
+  {
+    "filename": "sample_male_adhd.csv",
+    "description": "Male ADHD (Subject 1)",
+    "ground_truth": "ADHD",
+    "source_file": "MADHD.mat",
+    "subject_index": 1,
+    "samples": 7680,
+    "channels": 2,
+    "sampling_rate_hz": 256,
+    "duration_seconds": 30.0,
+    "channel_1_std": 28.013371506756982,
+    "channel_2_std": 20.601322830344778
+  }
+]

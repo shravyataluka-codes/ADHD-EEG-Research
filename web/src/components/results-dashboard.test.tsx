@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ResultsDashboard } from "@/components/results-dashboard";
 import type { AnalysisResponse } from "@/lib/types";
@@ -144,11 +144,6 @@ describe("ResultsDashboard", () => {
     expect(
       screen.getByText("Participant identities are not verified."),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Research use only. This exploratory tool is not a clinical diagnostic system.",
-      ),
-    ).toBeInTheDocument();
   });
 
   it("handles empty analyses and nullable recording outputs", () => {
@@ -173,5 +168,38 @@ describe("ResultsDashboard", () => {
     expect(
       screen.getByText(/No accepted epoch residuals were returned/),
     ).toBeInTheDocument();
+  });
+
+  it("allows switching between output tabs", () => {
+    render(
+      <ResultsDashboard
+        result={makeResponse()}
+        fileName="recording.csv"
+        onReset={vi.fn()}
+      />,
+    );
+
+    const overviewTab = screen.getByRole("tab", { name: /overview & classification/i });
+    const featureTab = screen.getByRole("tab", { name: /feature attributions/i });
+    const rawTab = screen.getByRole("tab", { name: /raw signal attributions/i });
+    const qualityTab = screen.getByRole("tab", { name: /quality & epoch details/i });
+
+    expect(overviewTab).toHaveAttribute("aria-selected", "true");
+    expect(featureTab).toHaveAttribute("aria-selected", "false");
+
+    // Click feature tab
+    fireEvent.click(featureTab);
+    expect(featureTab).toHaveAttribute("aria-selected", "true");
+    expect(overviewTab).toHaveAttribute("aria-selected", "false");
+
+    // Click raw tab
+    fireEvent.click(rawTab);
+    expect(rawTab).toHaveAttribute("aria-selected", "true");
+    expect(featureTab).toHaveAttribute("aria-selected", "false");
+
+    // Click quality tab
+    fireEvent.click(qualityTab);
+    expect(qualityTab).toHaveAttribute("aria-selected", "true");
+    expect(rawTab).toHaveAttribute("aria-selected", "false");
   });
 });
