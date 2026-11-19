@@ -46,11 +46,13 @@ class MongoDatabase:
         await self.database.analyses.create_index(
             [("owner_id", 1), ("created_at", -1)], name="ix_analyses_owner_created"
         )
-        await self.database.analyses.create_index("recording_id", name="ix_analyses_recording")
+        await self.database.analyses.create_index([("recording_id", 1), ("owner_id", 1)], name="ix_analyses_recording_owner")
+        await self.database.analyses.create_index("owner_id", name="ix_analyses_owner")
         await self.database.explanations.create_index(
             [("owner_id", 1), ("created_at", -1)], name="ix_explanations_owner_created"
         )
         await self.database.explanations.create_index("analysis_id", name="ix_explanations_analysis")
+        await self.database.explanations.create_index("owner_id", name="ix_explanations_owner")
 
     async def health_check(self) -> bool:
         if self.client is None:

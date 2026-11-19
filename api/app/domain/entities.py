@@ -28,6 +28,9 @@ class Analysis:
     recording_id: str
     created_at: datetime
     result: dict[str, Any] = field(default_factory=dict)
+    status: str = "completed"
+    completed_at: datetime | None = None
+    error: dict[str, Any] | None = None
 
 
 @dataclass
@@ -37,3 +40,4 @@ class Explanation:
     analysis_id: str
     created_at: datetime
     content: dict[str, Any] = field(default_factory=dict)
+    recording_id: str | None = None

@@ -25,12 +25,12 @@ from .infrastructure.mongodb.database import MongoDatabase
 from .application.authentication import AuthenticationService
 from .infrastructure.firebase.auth import FirebaseAuthenticationProvider
 from .infrastructure.firebase.test_auth import TestAuthenticationProvider
-from .infrastructure.mongodb.repositories import MongoUserRepository
-from .infrastructure.mongodb.repositories import MongoRecordingRepository
+from .infrastructure.mongodb.repositories import MongoUserRepository, MongoRecordingRepository, MongoAnalysisRepository, MongoExplanationRepository
 from .infrastructure.storage.local.local_storage import LocalFileStorageProvider
 from .infrastructure.storage.storage_service import StorageService
 from .recording_management import router as recording_management_router
 from .auth_routes import router as auth_router
+from .persistent_analysis_routes import router as persistent_analyses_router
 
 
 LOGGER = logging.getLogger(__name__)
@@ -112,6 +112,8 @@ def create_app(settings=None, predictor_loader=None, database_factory=None, auth
         app.state.database_error = None
         app.state.user_repository = None
         app.state.recording_repository = None
+        app.state.analysis_repository = None
+        app.state.explanation_repository = None
         app.state.file_storage = None
         mongodb_uri = getattr(configuration, "mongodb_uri", None)
         if mongodb_uri:
@@ -121,6 +123,8 @@ def create_app(settings=None, predictor_loader=None, database_factory=None, auth
                 app.state.database = database
                 app.state.user_repository = MongoUserRepository(database.database)
                 app.state.recording_repository = MongoRecordingRepository(database.database)
+                app.state.analysis_repository = MongoAnalysisRepository(database.database)
+                app.state.explanation_repository = MongoExplanationRepository(database.database)
             except Exception as error:
                 app.state.database_error = type(error).__name__
                 if getattr(configuration, "mongodb_required", False):
@@ -199,6 +203,7 @@ def create_app(settings=None, predictor_loader=None, database_factory=None, auth
     app.include_router(ingestion_router)
     app.include_router(recording_management_router)
     app.include_router(analyses_router)
+    app.include_router(persistent_analyses_router)
     app.include_router(auth_router)
 
     @app.exception_handler(RequestTooLargeError)
