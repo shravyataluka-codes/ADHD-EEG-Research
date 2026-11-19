@@ -16,6 +16,7 @@ class CrudRepository(Protocol[T]):
 
 class UserRepository(CrudRepository[User], Protocol):
     async def get_by_email(self, email: str) -> User | None: ...
+    async def get_by_firebase_uid(self, firebase_uid: str) -> User | None: ...
 
 
 @runtime_checkable

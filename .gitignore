@@ -49,6 +49,7 @@ reports/participant_identity_audit/recording_correspondence.csv
 web/.tsupgrader/
 
 # Local runtime and generated files
+data/eeg_recordings/
 api-server.log
 api-server-error.log
 tsconfig.tsbuildinfo

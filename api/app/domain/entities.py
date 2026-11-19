@@ -8,7 +8,7 @@ from typing import Any
 @dataclass
 class User:
     id: str
-    email: str
+    email: str | None
     created_at: datetime
     attributes: dict[str, Any] = field(default_factory=dict)
 

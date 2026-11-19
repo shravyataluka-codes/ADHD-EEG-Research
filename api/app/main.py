@@ -22,6 +22,15 @@ from .schemas import AnalysisResponse, HealthResponse, ReadyResponse
 from .service import UploadTooLargeError, analyze_csv_upload
 from .settings import Settings
 from .infrastructure.mongodb.database import MongoDatabase
+from .application.authentication import AuthenticationService
+from .infrastructure.firebase.auth import FirebaseAuthenticationProvider
+from .infrastructure.firebase.test_auth import TestAuthenticationProvider
+from .infrastructure.mongodb.repositories import MongoUserRepository
+from .infrastructure.mongodb.repositories import MongoRecordingRepository
+from .infrastructure.storage.local.local_storage import LocalFileStorageProvider
+from .infrastructure.storage.storage_service import StorageService
+from .recording_management import router as recording_management_router
+from .auth_routes import router as auth_router
 
 
 LOGGER = logging.getLogger(__name__)
@@ -85,7 +94,7 @@ class RequestBodyLimitMiddleware:
         await self.app(scope, limited_receive, send)
 
 
-def create_app(settings=None, predictor_loader=None, database_factory=None):
+def create_app(settings=None, predictor_loader=None, database_factory=None, authentication_provider=None):
     """Build the service; loader injection keeps API tests checkpoint-free."""
     configuration = settings or Settings.from_env()
     loader = predictor_loader or FinalFusionInference.from_checkpoint
@@ -101,12 +110,17 @@ def create_app(settings=None, predictor_loader=None, database_factory=None):
         app.state.analyses_lock = asyncio.Lock()
         app.state.database = None
         app.state.database_error = None
+        app.state.user_repository = None
+        app.state.recording_repository = None
+        app.state.file_storage = None
         mongodb_uri = getattr(configuration, "mongodb_uri", None)
         if mongodb_uri:
             database = db_factory(mongodb_uri, configuration.mongodb_database)
             try:
                 await database.connect()
                 app.state.database = database
+                app.state.user_repository = MongoUserRepository(database.database)
+                app.state.recording_repository = MongoRecordingRepository(database.database)
             except Exception as error:
                 app.state.database_error = type(error).__name__
                 if getattr(configuration, "mongodb_required", False):
@@ -117,6 +131,25 @@ def create_app(settings=None, predictor_loader=None, database_factory=None):
                 LOGGER.error("MongoDB initialization failed (%s).", type(error).__name__)
         elif getattr(configuration, "mongodb_required", False):
             raise RuntimeError("MongoDB is required but MONGODB_URI is not configured.")
+        provider = authentication_provider
+        if isinstance(provider, TestAuthenticationProvider) and configuration.app_environment.strip().lower() in {"prod", "production"}:
+            raise RuntimeError("The test authentication provider is disabled in production.")
+        if provider is None:
+            if configuration.auth_provider == "test":
+                if configuration.app_environment.strip().lower() in {"prod", "production"}:
+                    raise RuntimeError("The test authentication provider is disabled in production.")
+                provider = TestAuthenticationProvider()
+            else:
+                provider = FirebaseAuthenticationProvider(
+                    configuration.firebase_project_id,
+                    configuration.firebase_credentials_path,
+                )
+        app.state.authentication_service = AuthenticationService(provider, app.state.user_repository)
+        try:
+            app.state.file_storage = StorageService(LocalFileStorageProvider(configuration.local_storage_path))
+        except Exception as error:
+            app.state.storage_error = type(error).__name__
+            LOGGER.error("File storage initialization failed (%s).", type(error).__name__)
         # Phase 2: temporary in-memory recording store
         try:
             app.state.predictor = loader(
@@ -159,12 +192,14 @@ def create_app(settings=None, predictor_loader=None, database_factory=None):
         allow_origins=list(configuration.allowed_origins),
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     # Phase 2: mount EEG ingestion router
     app.include_router(ingestion_router)
+    app.include_router(recording_management_router)
     app.include_router(analyses_router)
+    app.include_router(auth_router)
 
     @app.exception_handler(RequestTooLargeError)
     async def request_too_large_error_handler(_request, _error):

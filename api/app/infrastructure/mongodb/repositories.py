@@ -60,6 +60,9 @@ class MongoUserRepository(MongoRepository[User]):
     async def get_by_email(self, email: str):
         return self._entity(await self.collection.find_one({"email": email}))
 
+    async def get_by_firebase_uid(self, firebase_uid: str):
+        return self._entity(await self.collection.find_one({"attributes.firebase_uid": firebase_uid}))
+
 
 class MongoRecordingRepository(MongoRepository[Recording]):
     collection_name, entity_type = "recordings", Recording

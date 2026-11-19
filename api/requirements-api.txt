@@ -14,3 +14,4 @@ torch==2.2.2+cpu
 # Phase 2: MAT v7.3 / HDF5 reading
 h5py>=3.9.0
 pymongo[srv]>=4.11,<5
+firebase-admin>=6.5,<8

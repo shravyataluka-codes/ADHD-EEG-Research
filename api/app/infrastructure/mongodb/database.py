@@ -34,7 +34,12 @@ class MongoDatabase:
     async def ensure_indexes(self):
         if self.database is None:
             raise DatabaseUnavailableError("MongoDB is not connected.")
-        await self.database.users.create_index("email", unique=True, name="uq_users_email")
+        await self.database.users.create_index(
+            "email", unique=True, sparse=True, name="uq_users_email"
+        )
+        await self.database.users.create_index(
+            "attributes.firebase_uid", unique=True, sparse=True, name="uq_users_firebase_uid"
+        )
         await self.database.recordings.create_index(
             [("owner_id", 1), ("created_at", -1)], name="ix_recordings_owner_created"
         )

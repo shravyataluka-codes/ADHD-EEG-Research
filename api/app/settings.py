@@ -92,6 +92,12 @@ class Settings:
     mongodb_uri: str | None = None
     mongodb_database: str = "drushti_detect"
     mongodb_required: bool = False
+    auth_provider: str = "firebase"
+    firebase_project_id: str | None = None
+    firebase_credentials_path: Path | None = None
+    app_environment: str = "development"
+    storage_provider: str = "local"
+    local_storage_path: Path = PROJECT_ROOT / "data" / "eeg_recordings"
 
     def __post_init__(self):
         if not isinstance(self.checkpoint_path, Path):
@@ -132,6 +138,19 @@ class Settings:
             raise ValueError("MONGODB_DATABASE must not be empty.")
         if self.mongodb_required and not self.mongodb_uri:
             raise ValueError("MONGODB_URI is required when MONGODB_REQUIRED is enabled.")
+        provider = self.auth_provider.strip().lower()
+        if provider not in {"firebase", "test"}:
+            raise ValueError("AUTH_PROVIDER must be 'firebase' or 'test'.")
+        if provider == "test" and self.app_environment.strip().lower() in {"prod", "production"}:
+            raise ValueError("The test authentication provider is disabled in production.")
+        object.__setattr__(self, "auth_provider", provider)
+        storage_provider = self.storage_provider.strip().lower()
+        if storage_provider != "local":
+            raise ValueError("STORAGE_PROVIDER must be 'local' in this release.")
+        object.__setattr__(self, "storage_provider", storage_provider)
+        object.__setattr__(self, "local_storage_path", Path(self.local_storage_path).expanduser())
+        if self.firebase_credentials_path is not None:
+            object.__setattr__(self, "firebase_credentials_path", Path(self.firebase_credentials_path))
 
     @classmethod
     def from_env(cls):
@@ -155,6 +174,7 @@ class Settings:
             ),
             "MAX_REQUEST_SIZE_BYTES",
         )
+        max_upload_mb = _positive_int(os.getenv("MAX_UPLOAD_SIZE_MB", "100"), "MAX_UPLOAD_SIZE_MB")
 
         return cls(
             checkpoint_path=Path(
@@ -180,7 +200,7 @@ class Settings:
             ingestion_max_upload_size_bytes=_positive_int(
                 os.getenv(
                     "INGESTION_MAX_UPLOAD_SIZE_BYTES",
-                    DEFAULT_INGESTION_MAX_UPLOAD_SIZE_BYTES,
+                    max_upload_mb * 1024 * 1024,
                 ),
                 "INGESTION_MAX_UPLOAD_SIZE_BYTES",
             ),
@@ -203,4 +223,10 @@ class Settings:
             mongodb_database=os.getenv("MONGODB_DATABASE", "drushti_detect"),
             mongodb_required=os.getenv("MONGODB_REQUIRED", "false").strip().lower()
             in {"1", "true", "yes"},
+            auth_provider=os.getenv("AUTH_PROVIDER", "firebase"),
+            firebase_project_id=os.getenv("FIREBASE_PROJECT_ID") or None,
+            firebase_credentials_path=os.getenv("FIREBASE_CREDENTIALS_PATH") or None,
+            app_environment=app_environment,
+            storage_provider=os.getenv("STORAGE_PROVIDER", "local"),
+            local_storage_path=Path(os.getenv("LOCAL_STORAGE_PATH", str(PROJECT_ROOT / "data" / "eeg_recordings"))),
         )
