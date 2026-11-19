@@ -1,0 +1,1 @@
+"""Persistence-agnostic domain entities."""

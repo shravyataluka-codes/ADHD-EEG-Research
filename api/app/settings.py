@@ -89,6 +89,9 @@ class Settings:
     max_recordings_in_memory: int = DEFAULT_MAX_RECORDINGS_IN_MEMORY
     max_total_recording_memory_bytes: int = DEFAULT_MAX_TOTAL_RECORDING_MEMORY_BYTES
     max_waveform_display_points: int = DEFAULT_MAX_WAVEFORM_DISPLAY_POINTS
+    mongodb_uri: str | None = None
+    mongodb_database: str = "drushti_detect"
+    mongodb_required: bool = False
 
     def __post_init__(self):
         if not isinstance(self.checkpoint_path, Path):
@@ -118,6 +121,17 @@ class Settings:
         _positive_int(self.max_recordings_in_memory, "MAX_RECORDINGS_IN_MEMORY")
         _positive_int(self.max_total_recording_memory_bytes, "MAX_TOTAL_RECORDING_MEMORY_BYTES")
         _positive_int(self.max_waveform_display_points, "MAX_WAVEFORM_DISPLAY_POINTS")
+        if self.mongodb_uri is not None:
+            uri = self.mongodb_uri.strip()
+            if not uri or uri == "YOUR_MONGODB_ATLAS_CONNECTION_STRING":
+                raise ValueError("MONGODB_URI must be a valid MongoDB connection string.")
+            if not uri.startswith(("mongodb://", "mongodb+srv://")):
+                raise ValueError("MONGODB_URI must use mongodb:// or mongodb+srv://.")
+            object.__setattr__(self, "mongodb_uri", uri)
+        if not self.mongodb_database.strip():
+            raise ValueError("MONGODB_DATABASE must not be empty.")
+        if self.mongodb_required and not self.mongodb_uri:
+            raise ValueError("MONGODB_URI is required when MONGODB_REQUIRED is enabled.")
 
     @classmethod
     def from_env(cls):
@@ -185,4 +199,8 @@ class Settings:
                 os.getenv("MAX_WAVEFORM_DISPLAY_POINTS", DEFAULT_MAX_WAVEFORM_DISPLAY_POINTS),
                 "MAX_WAVEFORM_DISPLAY_POINTS",
             ),
+            mongodb_uri=os.getenv("MONGODB_URI") or None,
+            mongodb_database=os.getenv("MONGODB_DATABASE", "drushti_detect"),
+            mongodb_required=os.getenv("MONGODB_REQUIRED", "false").strip().lower()
+            in {"1", "true", "yes"},
         )
