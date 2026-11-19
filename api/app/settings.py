@@ -21,6 +21,12 @@ DEFAULT_CHECKPOINT_PATH = (
 DEFAULT_MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 REQUEST_MULTIPART_OVERHEAD_BYTES = 64 * 1024
 
+# Phase 2 ingestion limits
+DEFAULT_INGESTION_MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
+DEFAULT_MAX_RECORDINGS_IN_MEMORY = 10
+DEFAULT_MAX_TOTAL_RECORDING_MEMORY_BYTES = 512 * 1024 * 1024  # 512 MB
+DEFAULT_MAX_WAVEFORM_DISPLAY_POINTS = 2000
+
 
 def _positive_int(value, name):
     try:
@@ -78,6 +84,11 @@ class Settings:
     allowed_origins: tuple = ("http://localhost:3000",)
     max_concurrent_inference: int = 1
     inference_wait_timeout_seconds: float = 0.5
+    # Phase 2 ingestion limits
+    ingestion_max_upload_size_bytes: int = DEFAULT_INGESTION_MAX_UPLOAD_SIZE_BYTES
+    max_recordings_in_memory: int = DEFAULT_MAX_RECORDINGS_IN_MEMORY
+    max_total_recording_memory_bytes: int = DEFAULT_MAX_TOTAL_RECORDING_MEMORY_BYTES
+    max_waveform_display_points: int = DEFAULT_MAX_WAVEFORM_DISPLAY_POINTS
 
     def __post_init__(self):
         if not isinstance(self.checkpoint_path, Path):
@@ -102,6 +113,11 @@ class Settings:
             allow_zero=True,
         )
         _parse_origins(",".join(self.allowed_origins))
+        # Phase 2 ingestion limit validation
+        _positive_int(self.ingestion_max_upload_size_bytes, "INGESTION_MAX_UPLOAD_SIZE_BYTES")
+        _positive_int(self.max_recordings_in_memory, "MAX_RECORDINGS_IN_MEMORY")
+        _positive_int(self.max_total_recording_memory_bytes, "MAX_TOTAL_RECORDING_MEMORY_BYTES")
+        _positive_int(self.max_waveform_display_points, "MAX_WAVEFORM_DISPLAY_POINTS")
 
     @classmethod
     def from_env(cls):
@@ -145,5 +161,28 @@ class Settings:
                 os.getenv("INFERENCE_WAIT_TIMEOUT_SECONDS", "0.5"),
                 "INFERENCE_WAIT_TIMEOUT_SECONDS",
                 allow_zero=True,
+            ),
+            # Phase 2 ingestion limits
+            ingestion_max_upload_size_bytes=_positive_int(
+                os.getenv(
+                    "INGESTION_MAX_UPLOAD_SIZE_BYTES",
+                    DEFAULT_INGESTION_MAX_UPLOAD_SIZE_BYTES,
+                ),
+                "INGESTION_MAX_UPLOAD_SIZE_BYTES",
+            ),
+            max_recordings_in_memory=_positive_int(
+                os.getenv("MAX_RECORDINGS_IN_MEMORY", DEFAULT_MAX_RECORDINGS_IN_MEMORY),
+                "MAX_RECORDINGS_IN_MEMORY",
+            ),
+            max_total_recording_memory_bytes=_positive_int(
+                os.getenv(
+                    "MAX_TOTAL_RECORDING_MEMORY_BYTES",
+                    DEFAULT_MAX_TOTAL_RECORDING_MEMORY_BYTES,
+                ),
+                "MAX_TOTAL_RECORDING_MEMORY_BYTES",
+            ),
+            max_waveform_display_points=_positive_int(
+                os.getenv("MAX_WAVEFORM_DISPLAY_POINTS", DEFAULT_MAX_WAVEFORM_DISPLAY_POINTS),
+                "MAX_WAVEFORM_DISPLAY_POINTS",
             ),
         )

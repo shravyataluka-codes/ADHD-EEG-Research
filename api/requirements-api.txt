@@ -11,3 +11,5 @@ numpy==1.26.4
 scipy==1.17.1
 PyYAML==6.0.3
 torch==2.2.2+cpu
+# Phase 2: MAT v7.3 / HDF5 reading
+h5py>=3.9.0

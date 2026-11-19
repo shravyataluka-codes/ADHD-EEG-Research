@@ -16,6 +16,7 @@ from src.inference import FinalFusionInference
 from src.preprocessing import RecordingRejectedError
 from src.ui_service import UIInputError
 
+from .ingestion.routes import router as ingestion_router
 from .schemas import AnalysisResponse, HealthResponse, ReadyResponse
 from .service import UploadTooLargeError, analyze_csv_upload
 from .settings import Settings
@@ -91,6 +92,9 @@ def create_app(settings=None, predictor_loader=None):
     async def lifespan(app):
         app.state.predictor = None
         app.state.model_load_error_type = None
+        app.state.recordings = {}
+        app.state.recordings_lock = asyncio.Lock()
+          # Phase 2: temporary in-memory recording store
         try:
             app.state.predictor = loader(
                 str(configuration.checkpoint_path),
@@ -129,6 +133,9 @@ def create_app(settings=None, predictor_loader=None):
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
+
+    # Phase 2: mount EEG ingestion router
+    app.include_router(ingestion_router)
 
     @app.exception_handler(RequestTooLargeError)
     async def request_too_large_error_handler(_request, _error):
